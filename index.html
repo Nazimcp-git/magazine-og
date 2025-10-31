@@ -53,7 +53,7 @@
     // ===================================================================================
     
     const firebaseConfig = {
-     apiKey: "AIzaSyBYCiz_Ec0GeQajAKP3RrxylR1bjIr9wnQ",
+      apiKey: "AIzaSyBYCiz_Ec0GeQajAKP3RrxylR1bjIr9wnQ",
   authDomain: "nishan-8d4db.firebaseapp.com",
   databaseURL: "https://nishan-8d4db-default-rtdb.firebaseio.com",
   projectId: "nishan-8d4db",
@@ -153,9 +153,9 @@
     }
 
     /**
-     * NEW: Populates the category <select> filters in the navbar
+     * MODIFIED: Populates the category <select> filters on the SEARCH PAGE
      */
-    function populateNavFilters() {
+    function populateSearchPageFilters() {
         if (Object.keys(state.categories).length === 0) {
             console.error("Categories not loaded, filters cannot be populated.");
             return;
@@ -164,14 +164,10 @@
         const categories = Object.keys(state.categories);
         const optionsHtml = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
 
-        const desktopFilter = document.getElementById('category-filter');
-        const mobileFilter = document.getElementById('category-filter-mobile');
+        const categoryFilter = document.getElementById('category-filter');
 
-        if (desktopFilter) {
-            desktopFilter.innerHTML = `<option value="all">All Categories</option>${optionsHtml}`;
-        }
-        if (mobileFilter) {
-            mobileFilter.innerHTML = `<option value="all">All Categories</option>${optionsHtml}`;
+        if (categoryFilter) {
+            categoryFilter.innerHTML = `<option value="all">All Categories</option>${optionsHtml}`;
         }
     }
 
@@ -188,6 +184,7 @@
         '/article/:id': 'ArticlePage',
         '/about': 'AboutPage', // NEW
         '/contact': 'ContactPage', // NEW
+        '/search': 'SearchPage', // NEW
         '/admin': 'AdminLoginPage',
         '/admin/dashboard': 'AdminDashboard'
     };
@@ -247,6 +244,10 @@
                     await renderContactPage();
                     footerContainer.innerHTML = Footer();
                     break;
+                case 'SearchPage':
+                    await renderSearchPage();
+                    footerContainer.innerHTML = Footer();
+                    break;
                 case 'AdminLoginPage':
                     await renderAdminLoginPage();
                     footerContainer.innerHTML = ''; // No footer on admin pages
@@ -275,10 +276,10 @@
     // 🎨 4. UI TEMPLATES & COMPONENTS
     // ===================================================================================
 
-    const Navbar = (showFilters = false) => `
+    const Navbar = () => `
         <nav class="bg-white dark:bg-gray-800 sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700">
-            <!-- MODIFIED: Set max-width and padding for boxed layout -->
-            <div class="w-full max-w-7xl mx-auto px-6">
+            <!-- MODIFIED: Set max-width to 6xl -->
+            <div class="w-full max-w-6xl mx-auto px-6">
                 <div class="flex justify-between items-center h-16">
                     <!-- Logo -->
                     <div class="flex-shrink-0 flex items-center">
@@ -293,15 +294,9 @@
                         <a href="/about" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>About</a>
                         <a href="/contact" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Contact</a>
                         
-                        <!-- NEW: Conditionally render search/filter -->
-                        ${showFilters ? `
-                        <input type="search" id="search-input" placeholder="Search..." class="w-36 px-3 py-1.5 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <select id="category-filter" class="w-36 px-3 py-1.5 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option value="all">All Categories</option>
-                            <!-- Populated by JS -->
-                        </select>
-                        ` : `
-                        <!-- Desktop Category Dropdown (now only for non-home pages) -->
+                        <!-- MODIFIED: Removed filters, added Search link -->
+                        
+                        <!-- Desktop Category Dropdown -->
                         <div class="relative">
                             <button type="button" id="category-dropdown-toggle" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center focus:outline-none">
                                 <span>Categories</span>
@@ -315,8 +310,8 @@
                                 </div>
                             </div>
                         </div>
-                        `}
                         
+                        <a href="/search" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Search</a>
                         <a href="/admin" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Admin</a>
                         
                         <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none">
@@ -350,10 +345,10 @@
                     <a href="/" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Home</a>
                     <a href="/about" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>About</a>
                     <a href="/contact" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Contact</a>
+                    <a href="/search" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Search</a>
                     <a href="/admin" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Admin</a>
                     
-                    ${showFilters ? '' : `
-                    <!-- Mobile Category Dropdown (now only for non-home pages) -->
+                    <!-- Mobile Category Dropdown -->
                     <div>
                         <button type="button" id="mobile-category-toggle" class="w-full flex justify-between items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                             <span>Categories</span>
@@ -365,30 +360,61 @@
                             <!-- Mobile categories will be populated here -->
                         </div>
                     </div>
-                    `}
                 </div>
-                <!-- Search/Filter in Mobile Menu (populated by condition) -->
-                ${showFilters ? `
-                <div id="mobile-filter-container" class="p-4 border-t border-gray-200 dark:border-gray-700">
-                     <div class="space-y-4">
-                        <input type="search" id="search-input-mobile" placeholder="Search articles..." class="w-full px-4 py-2 border rounded-md bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <select id="category-filter-mobile" class="w-full px-4 py-2 border rounded-md bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option value="all">All Categories</option>
-                            <!-- Populated by JS -->
-                        </select>
-                    </div>
-                </div>
-                ` : ''}
+                <!-- Search/Filter in Mobile Menu (REMOVED) -->
             </div>
         </nav>
-        
-        <!-- This slot is for the sticky filter bar on desktop -->
     `;
 
     const Footer = () => `
-        <footer class="bg-white dark:bg-gray-800 mt-12 py-8 border-t border-gray-200 dark:border-gray-700">
-            <!-- MODIFIED: Applied consistent padding and max-width -->
-            <div class="w-full max-w-7xl mx-auto px-6 text-center text-gray-600 dark:text-gray-400">
+        <footer class="bg-white dark:bg-gray-800 mt-12 py-16 border-t border-gray-200 dark:border-gray-700">
+            <div class="w-full max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- About Column -->
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">The Root Magazine</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Bringing you the latest in tech, culture, and science with clarity and depth.
+                    </p>
+                </div>
+                
+                <!-- Quick Links Column -->
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="/" data-link class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">Home</a></li>
+                        <li><a href="/about" data-link class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">About Us</a></li>
+                        <li><a href="/contact" data-link class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">Contact</a></li>
+                        <li><a href="/admin" data-link class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">Admin Login</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Categories Column (Static) -->
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Topics</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" data-category-filter="Technology" class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">Technology</a></li>
+                        <li><a href="#" data-category-filter="Culture" class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">Culture</a></li>
+                        <li><a href="#" data-category-filter="Politics" class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">Politics</a></li>
+                        <li><a href="#" data-category-filter="Lifestyle" class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">Lifestyle</a></li>
+                    </ul>
+                </div>
+
+                <!-- Social Column -->
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Follow Us</h4>
+                    <div class="flex space-x-4">
+                        <!-- Placeholder SVGs for social icons -->
+                        <a href="#" class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M22.46,6C21.69,6.35 20.86,6.58 20,6.69C20.88,6.16 21.56,5.32 21.88,4.31C21.05,4.81 20.13,5.16 19.16,5.36C18.37,4.5 17.26,4 16,4C13.65,4 11.73,5.92 11.73,8.26C11.73,8.6 11.77,8.92 11.84,9.22C8.28,9.04 5.1,7.38 2.9,4.79C2.5,5.39 2.29,6.16 2.29,7C2.29,8.53 3.07,9.86 4.19,10.64C3.47,10.62 2.8,10.43 2.2,10.13V10.17C2.2,12.38 3.75,14.21 5.8,14.62C5.45,14.7 5.08,14.75 4.7,14.75C4.42,14.75 4.15,14.72 3.89,14.67C4.47,16.5 6.13,17.88 8.1,17.92C6.57,19.08 4.7,19.75 2.69,19.75C2.35,19.75 2.02,19.73 1.7,19.68C3.7,20.98 6.08,21.75 8.64,21.75C16,21.75 20.24,15.65 20.24,10.2C20.24,10.03 20.24,9.86 20.23,9.7C20.93,9.17 21.56,8.51 22.04,7.74C21.32,8.06 20.56,8.28 19.78,8.38C20.58,7.9 21.23,7.07 21.54,6.13C20.83,6.54 20.06,6.85 19.25,7.01C18.51,6.2 17.34,5.69 16,5.69C13.8,5.69 12,7.49 12,9.69C12,10 12.04,10.3 12.12,10.59C8.76,10.41 5.7,8.88 3.57,6.48C3.18,7.12 2.95,7.88 2.95,8.7C2.95,10.12 3.69,11.38 4.72,12.1C4.06,12.08 3.44,11.9 2.89,11.6V11.64C2.89,13.72 4.38,15.45 6.3,15.84C5.97,15.93 5.62,15.98 5.26,15.98C5,15.98 4.73,15.95 4.47,15.9C5.02,17.62 6.57,18.9 8.38,18.94C6.94,20.03 5.17,20.68 3.29,20.68C2.97,20.68 2.64,20.66 2.32,20.61C4.24,21.86 6.5,22.5 8.88,22.5C16.31,22.5 20.5,16.57 20.5,11.2C20.5,11.05 20.5,10.9 20.49,10.75C21.22,10.22 21.88,9.57 22.46,8.82L22.46,6Z" /></svg>
+                        </a>
+                        <a href="#" class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.04C6.5 2.04 2 6.53 2 12.06C2 17.06 5.66 21.21 10.44 21.96V14.96H7.9V12.06H10.44V9.8C10.44 7.3 11.93 5.96 14.22 5.96C15.31 5.96 16.45 6.15 16.45 6.15V8.62H15.19C13.95 8.62 13.56 9.39 13.56 10.18V12.06H16.34L15.89 14.96H13.56V21.96C18.34 21.21 22 17.06 22 12.06C22 6.53 17.5 2.04 12 2.04Z" /></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- Copyright Bar -->
+            <div class="w-full max-w-6xl mx-auto px-6 mt-8 pt-8 border-t border-gray-200 dark:border-gray-700 text-center text-gray-500 dark:text-gray-400">
                 &copy; ${new Date().getFullYear()} The Root Magazine. All rights reserved.
             </div>
         </footer>
@@ -474,13 +500,9 @@
         // This logic remains the same for the main grid
         const latestArticles = state.filteredArticles.length > 0 ? state.filteredArticles : state.articles;
         
-        // NEW: Define the filter bar HTML
-        // REMOVED filterBarHtml
-
-        // MODIFIED: Pass true to Navbar to show filters
-        // Main content is now wrapped section by section for full-width slideshow
+        // MODIFIED: Pass false to Navbar (or nothing)
         app.innerHTML = `
-            ${Navbar(true)}
+            ${Navbar()}
             <main>
                 <!-- 1. Trending Posts Slideshow - NOW FULL WIDTH -->
                 ${trendingArticles.length > 0 ? `
@@ -489,25 +511,23 @@
                 </section>
                 ` : ''}
 
-                <!-- 2. Filter Bar Section (REMOVED from here) -->
-
-                <!-- 3. NEW: Featured Posts Section -->
+                <!-- 2. NEW: Featured Posts Section (Modified layout) -->
                 ${featuredArticles.length > 0 ? `
-                <section class="w-full max-w-7xl mx-auto px-6 py-16">
+                <section class="w-full max-w-6xl mx-auto px-6 py-16">
                     <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-8">Featured Posts</h2>
-                    <div class="grid md:grid-cols-3 gap-10">
+                    <div class="grid md:grid-cols-3 gap-8">
                         ${featuredArticles.map(ArticleCard).join('')}
                     </div>
                 </section>
-                <div class="w-full max-w-7xl mx-auto px-6">
+                <div class="w-full max-w-6xl mx-auto px-6">
                     <hr class="border-gray-200 dark:border-gray-700">
                 </div>
                 ` : ''}
 
-                <!-- 4. Latest Posts Section (Modified title) -->
-                <section class="w-full max-w-7xl mx-auto px-6 py-16">
+                <!-- 3. Latest Posts Section (Modified layout) -->
+                <section class="w-full max-w-6xl mx-auto px-6 py-16">
                     <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-8">All Latest Posts</h2>
-                    <div id="latest-posts-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+                    <div id="latest-posts-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                         ${latestArticles.length > 0 ? latestArticles.map(ArticleCard).join('') : '<p>No articles found.</p>'}
                     </div>
                 </section>
@@ -517,10 +537,8 @@
         // We now need to attach listeners
         attachHomeEventListeners(trendingArticles.length); // Pass slide count
         attachThemeToggleListener(); // Attach theme toggle
-        attachNavbarListeners(); // NEW: Attach listeners for dropdown
-        await populateNavFilters(); // NEW: Populate filters in nav
-        
-        // REMOVED: Mobile filter content moving logic
+        attachNavbarListeners(); // Attach listeners for dropdown
+        populateCategoriesInNav(); // Populate dropdown
     }
 
     async function renderArticlePage(articleId) {
@@ -544,10 +562,10 @@
                 .filter(a => a.id !== articleId)
                 .slice(0, 3);
 
-            // MODIFIED: Wrapped in main container
+            // MODIFIED: Wrapped in main container (max-w-6xl)
             app.innerHTML = `
                 ${Navbar()}
-                <main class="w-full max-w-7xl mx-auto px-6 py-12">
+                <main class="w-full max-w-6xl mx-auto px-6 py-12">
                     <article class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
                         <img class="w-full h-96 object-cover" src="${article.imageURL}" alt="${article.title}">
                         <div class="p-8 md:p-12">
@@ -567,7 +585,7 @@
                     <!-- Related Posts -->
                     <section class="max-w-4xl mx-auto mt-16">
                          <h2 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Related Posts</h2>
-                         <div class="grid md:grid-cols-3 gap-8">
+                         <div class="grid md:grid-cols-3 gap-6">
                             ${relatedArticles.length > 0 ? relatedArticles.map(ArticleCard).join('') : '<p>No related articles found.</p>'}
                          </div>
                     </section>
@@ -612,11 +630,11 @@
         }
     }
 
-    // --- NEW RENDER FUNCTIONS ---
+    // --- RENDER FUNCTIONS for About, Contact, Search ---
     async function renderAboutPage() {
         app.innerHTML = `
             ${Navbar()}
-            <main class="w-full max-w-7xl mx-auto px-6 py-12">
+            <main class="w-full max-w-6xl mx-auto px-6 py-12">
                 <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 md:p-12">
                     <h1 class="text-4xl font-extrabold mt-2 text-gray-900 dark:text-white">About The Root Magazine</h1>
                     <div class="mt-8 prose lg:prose-xl dark:prose-invert max-w-none">
@@ -635,7 +653,7 @@
     async function renderContactPage() {
         app.innerHTML = `
             ${Navbar()}
-            <main class="w-full max-w-7xl mx-auto px-6 py-12">
+            <main class="w-full max-w-6xl mx-auto px-6 py-12">
                 <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 md:p-12">
                     <h1 class="text-4xl font-extrabold mt-2 text-gray-900 dark:text-white">Contact Us</h1>
                     <p class="mt-4 text-lg text-gray-600 dark:text-gray-300">Have a tip, question, or just want to say hi? Fill out the form below.</p>
@@ -682,6 +700,41 @@
             showToast('Message sent! (Demo)', 'success');
             e.target.reset();
         });
+    }
+
+    // --- NEW: RENDER SEARCH PAGE ---
+    async function renderSearchPage() {
+        await fetchArticlesAndCategories();
+        
+        // Use all articles for search page
+        const articles = state.filteredArticles.length > 0 ? state.filteredArticles : state.articles;
+
+        app.innerHTML = `
+            ${Navbar()}
+            <main class="w-full max-w-6xl mx-auto px-6 py-12">
+                <h1 class="text-4xl font-extrabold text-gray-900 dark:text-white">Search Articles</h1>
+                
+                <!-- Filter Bar -->
+                <div class="my-8 p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-center gap-4">
+                    <input type="search" id="search-input" placeholder="Search articles by title or content..." class="w-full md:flex-1 px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <select id="category-filter" class="w-full md:w-auto px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="all">All Categories</option>
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+
+                <!-- Article Grid -->
+                <div id="latest-posts-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    ${articles.length > 0 ? articles.map(ArticleCard).join('') : '<p>No articles found.</p>'}
+                </div>
+            </main>
+        `;
+
+        attachSearchPageListeners(); // NEW listener
+        attachThemeToggleListener();
+        attachNavbarListeners();
+        populateCategoriesInNav();
+        populateSearchPageFilters(); // NEW filter populator
     }
     // --- END NEW RENDER FUNCTIONS ---
 
@@ -887,7 +940,7 @@
     function renderNotFoundPage() {
         app.innerHTML = `
             ${Navbar()}
-            <main class="w-full max-w-7xl mx-auto px-6 py-20 text-center">
+            <main class="w-full max-w-6xl mx-auto px-6 py-20 text-center">
                 <h1 class="text-6xl font-extrabold text-indigo-600">404</h1>
                 <p class="mt-4 text-2xl text-gray-700 dark:text-gray-300">Page Not Found</p>
                 <p class="mt-2 text-gray-500">The page you're looking for doesn't exist.</p>
@@ -910,6 +963,9 @@
             state.articles = Object.entries(articlesData)
                 .map(([id, data]) => ({ id, ...data }))
                 .sort((a, b) => b.timestamp - a.timestamp);
+            
+            // Set filtered articles to all articles by default
+            state.filteredArticles = state.articles;
 
             const categoriesSnapshot = await db.ref('categories').once('value');
             state.categories = categoriesSnapshot.val() || {};
@@ -1079,7 +1135,7 @@
 
         // Close desktop dropdown if clicking outside
         document.addEventListener('click', (e) => {
-            if (desktopCategoryMenu && !desktopCategoryMenu.classList.contains('hidden')) {
+            if (desktopCategoryToggle && desktopCategoryMenu && !desktopCategoryMenu.classList.contains('hidden')) {
                 if (!desktopCategoryToggle.contains(e.target) && !desktopCategoryMenu.contains(e.target)) {
                     desktopCategoryMenu.classList.add('hidden');
                 }
@@ -1097,22 +1153,16 @@
                 if (target) {
                     const category = target.dataset.categoryFilter;
                     
-                    // Navigate to home page
-                    navigateTo('/');
+                    // Navigate to SEARCH page
+                    navigateTo('/search');
                     
-                    // Wait for home page to render, then apply filter
+                    // Wait for search page to render, then apply filter
                     setTimeout(() => {
-                        // Check both desktop and mobile filters
-                        const filterSelectDesktop = document.getElementById('category-filter');
-                        const filterSelectMobile = document.getElementById('category-filter-mobile');
+                        const filterSelect = document.getElementById('category-filter');
                         
-                        if (filterSelectDesktop) {
-                            filterSelectDesktop.value = category;
-                            filterSelectDesktop.dispatchEvent(new Event('change'));
-                        }
-                        if (filterSelectMobile) {
-                             filterSelectMobile.value = category;
-                             filterSelectMobile.dispatchEvent(new Event('change'));
+                        if (filterSelect) {
+                            filterSelect.value = category;
+                            filterSelect.dispatchEvent(new Event('change'));
                         }
                         
                         // Close menus
@@ -1128,57 +1178,13 @@
         
         setupCategoryLinkListeners('category-links-container'); // Desktop
         setupCategoryLinkListeners('mobile-category-links-container'); // Mobile
+        
+        // Also add listeners for the new footer links
+        setupCategoryLinkListeners('footer-container');
     }
 
     function attachHomeEventListeners(slideCount) {
-        // --- Filter Logic (Now handles both desktop and mobile) ---
-        const searchInputDesktop = document.getElementById('search-input');
-        const categoryFilterDesktop = document.getElementById('category-filter');
-        const searchInputMobile = document.getElementById('search-input-mobile');
-        const categoryFilterMobile = document.getElementById('category-filter-mobile');
-        
-        const applyFilters = () => {
-            // Read from desktop inputs, as they are the "master"
-            const searchTerm = searchInputDesktop?.value.toLowerCase() || "";
-            const selectedCategory = categoryFilterDesktop?.value || "all";
-
-            state.filteredArticles = state.articles.filter(article => {
-                const matchesSearch = article.title.toLowerCase().includes(searchTerm) || article.content.toLowerCase().includes(searchTerm);
-                const matchesCategory = selectedCategory === 'all' || article.category === selectedCategory;
-                return matchesSearch && matchesCategory;
-            });
-            
-            const grid = document.getElementById('latest-posts-grid');
-            if(grid) {
-                grid.innerHTML = state.filteredArticles.length > 0
-                    ? state.filteredArticles.map(ArticleCard).join('')
-                    : '<p class="col-span-full text-center">No articles match your criteria.</p>';
-            }
-        };
-
-        // Sync desktop and mobile inputs
-        const syncInputs = (source, target) => {
-            if (source && target) {
-                target.value = source.value;
-            }
-        };
-        
-        searchInputDesktop?.addEventListener('input', () => {
-            syncInputs(searchInputDesktop, searchInputMobile);
-            applyFilters();
-        });
-        categoryFilterDesktop?.addEventListener('change', () => {
-            syncInputs(categoryFilterDesktop, categoryFilterMobile);
-            applyFilters();
-        });
-        searchInputMobile?.addEventListener('input', () => {
-            syncInputs(searchInputMobile, searchInputDesktop);
-            applyFilters();
-        });
-        categoryFilterMobile?.addEventListener('change', () => {
-            syncInputs(categoryFilterMobile, categoryFilterDesktop);
-            applyFilters();
-        });
+        // --- Filter Logic (REMOVED) ---
         
         // --- Slideshow Logic ---
         if (slideCount > 0) {
@@ -1222,6 +1228,34 @@
             setInterval(goToNext, 5000); // Change slide every 5 seconds
         }
     }
+
+    // --- NEW: SEARCH PAGE LISTENERS ---
+    function attachSearchPageListeners() {
+        const searchInput = document.getElementById('search-input');
+        const categoryFilter = document.getElementById('category-filter');
+        
+        const applyFilters = () => {
+            const searchTerm = searchInput?.value.toLowerCase() || "";
+            const selectedCategory = categoryFilter?.value || "all";
+
+            state.filteredArticles = state.articles.filter(article => {
+                const matchesSearch = article.title.toLowerCase().includes(searchTerm) || article.content.toLowerCase().includes(searchTerm);
+                const matchesCategory = selectedCategory === 'all' || article.category === selectedCategory;
+                return matchesSearch && matchesCategory;
+            });
+            
+            const grid = document.getElementById('latest-posts-grid');
+            if(grid) {
+                grid.innerHTML = state.filteredArticles.length > 0
+                    ? state.filteredArticles.map(ArticleCard).join('')
+                    : '<p class="col-span-full text-center">No articles match your criteria.</p>';
+            }
+        };
+
+        searchInput?.addEventListener('input', applyFilters);
+        categoryFilter?.addEventListener('change', applyFilters);
+    }
+    // --- END NEW LISTENERS ---
 
     function attachArticlePageListeners(articleId) {
         const commentForm = document.getElementById('comment-form');
