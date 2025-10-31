@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Magazine</title>
+    
+    <!-- NEW: Google Font (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap">
+    
+    <!-- Tailwind CSS v3.4.1 via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class', // Enable dark mode using a class
+        theme: {
+          extend: {
+            // NEW: Set Inter as the default sans-serif font
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    
+    <!-- Firebase SDK v8.10.0 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
+    <style>
+        /* Simple transition for route changes */
+        #app {
+            transition: opacity 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans antialiased flex flex-col min-h-screen">
+
+    <!-- The root element where the entire application will be rendered -->
+    <div id="app" class="flex-1"></div>
+    
+    <!-- Footer container, will be populated by the router -->
+    <div id="footer-container"></div>
+
+    <!-- The entire application logic is contained within this script tag -->
+    <script>
+    // ===================================================================================
+    // 🔥 1. FIREBASE CONFIGURATION & INITIALIZATION
+    // ===================================================================================
+    
+    const firebaseConfig = {
+     apiKey: "AIzaSyBYCiz_Ec0GeQajAKP3RrxylR1bjIr9wnQ",
+  authDomain: "nishan-8d4db.firebaseapp.com",
+  databaseURL: "https://nishan-8d4db-default-rtdb.firebaseio.com",
+  projectId: "nishan-8d4db",
+  storageBucket: "nishan-8d4db.appspot.com",
+  messagingSenderId: "856716933837",
+  appId: "1:856716933837:web:b6114e617a0c001d3f8784",
+  measurementId: "G-ZB1X291PJY"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+
+    // ===================================================================================
+    // 🏛️ 2. GLOBAL STATE & HELPERS
+    // ===================================================================================
+
+    const state = {
+        currentUser: null,
+        articles: [],
+        categories: [],
+        filteredArticles: [],
+    };
+
+    /**
+     * A helper to format dates consistently.
+     * @param {number} timestamp - The Unix timestamp.
+     * @returns {string} Formatted date string (e.g., October 30, 2025).
+     */
+    const formatDate = (timestamp) => {
+        return new Date(timestamp).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+
+    /**
+     * Displays a toast notification for feedback.
+     * @param {string} message - The message to display.
+     * @param {string} type - 'success' or 'error'.
+     */
+    const showToast = (message, type = 'success') => {
+        const toast = document.createElement('div');
+        const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+        // MODIFIED: Replaced shadow-lg with border
+        toast.className = `fixed bottom-5 right-5 text-white px-6 py-3 rounded-lg border border-gray-300 dark:border-gray-600 transform translate-y-20 opacity-0 transition-all duration-300 ${bgColor}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+        }, 10);
+
+        setTimeout(() => {
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    };
+
+    /**
+     * NEW: Helper to populate category dropdown
+     */
+    async function populateCategoriesInNav() {
+        // Check if categories are already fetched
+        if (Object.keys(state.categories).length === 0) {
+            await fetchArticlesAndCategories(); // Fetch if empty
+        }
+        
+        // Get both desktop and mobile containers
+        const desktopContainer = document.getElementById('category-links-container');
+        const mobileContainer = document.getElementById('mobile-category-links-container');
+        
+        const categories = Object.keys(state.categories);
+        let linksHtml = '';
+
+        if (categories.length > 0) {
+            linksHtml = categories.map(cat => 
+                // These links will navigate to home and apply a filter
+                `<a href="#" data-category-filter="${cat}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">${cat}</a>`
+            ).join('');
+        } else {
+            linksHtml = `<p class="px-4 py-2 text-sm text-gray-500">No categories.</p>`;
+        }
+        
+        if (desktopContainer) {
+            desktopContainer.innerHTML = linksHtml;
+        }
+        if (mobileContainer) {
+            // For mobile, we just insert the links directly
+            mobileContainer.innerHTML = linksHtml;
+        }
+    }
+
+    /**
+     * NEW: Populates the category <select> filters in the navbar
+     */
+    function populateNavFilters() {
+        if (Object.keys(state.categories).length === 0) {
+            console.error("Categories not loaded, filters cannot be populated.");
+            return;
+        }
+
+        const categories = Object.keys(state.categories);
+        const optionsHtml = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+
+        const desktopFilter = document.getElementById('category-filter');
+        const mobileFilter = document.getElementById('category-filter-mobile');
+
+        if (desktopFilter) {
+            desktopFilter.innerHTML = `<option value="all">All Categories</option>${optionsHtml}`;
+        }
+        if (mobileFilter) {
+            mobileFilter.innerHTML = `<option value="all">All Categories</option>${optionsHtml}`;
+        }
+    }
+
+
+    // ===================================================================================
+    // 🧭 3. ROUTER LOGIC
+    // ===================================================================================
+
+    const app = document.getElementById('app');
+
+    // Define the application routes
+    const routes = {
+        '/': 'HomePage',
+        '/article/:id': 'ArticlePage',
+        '/about': 'AboutPage', // NEW
+        '/contact': 'ContactPage', // NEW
+        '/admin': 'AdminLoginPage',
+        '/admin/dashboard': 'AdminDashboard'
+    };
+
+    /**
+     * Navigates to a new route without a page reload.
+     * @param {string} path - The path to navigate to (e.g., '/article/123').
+     */
+    const navigateTo = (path) => {
+        window.history.pushState({}, path, window.location.origin + path);
+        router();
+    };
+
+    /**
+     * The main router function that resolves the current URL and renders the correct page.
+     */
+    const router = async () => {
+        const path = window.location.pathname;
+        let view, params;
+        const footerContainer = document.getElementById('footer-container');
+
+        // Simple regex-based route matching
+        for (const route in routes) {
+            const routeRegex = new RegExp(`^${route.replace(/:\w+/g, '([^/]+)')}$`);
+            const match = path.match(routeRegex);
+            if (match) {
+                view = routes[route];
+                params = match.slice(1);
+                break;
+            }
+        }
+        
+        if (!view) {
+             view = 'NotFoundPage'; // Fallback for 404
+        }
+
+        // Add a fade-out effect for smooth transitions
+        app.style.opacity = 0;
+        
+        setTimeout(async () => {
+            // Call the render function for the matched view
+            switch (view) {
+                case 'HomePage':
+                    await renderHomePage();
+                    footerContainer.innerHTML = Footer();
+                    break;
+                case 'ArticlePage':
+                    await renderArticlePage(params[0]); // params[0] is the article ID
+                    footerContainer.innerHTML = Footer();
+                    break;
+                // NEW CASES
+                case 'AboutPage':
+                    await renderAboutPage();
+                    footerContainer.innerHTML = Footer();
+                    break;
+                case 'ContactPage':
+                    await renderContactPage();
+                    footerContainer.innerHTML = Footer();
+                    break;
+                case 'AdminLoginPage':
+                    await renderAdminLoginPage();
+                    footerContainer.innerHTML = ''; // No footer on admin pages
+                    break;
+                case 'AdminDashboard':
+                    if (!state.currentUser) {
+                        navigateTo('/admin'); // Route protection
+                        return;
+                    }
+                    await renderAdminDashboard();
+                    footerContainer.innerHTML = ''; // No footer on admin pages
+                    break;
+                default:
+                    renderNotFoundPage();
+                    footerContainer.innerHTML = Footer();
+            }
+            app.style.opacity = 1;
+        }, 300);
+    };
+
+    // Listen for browser back/forward navigation
+    window.addEventListener('popstate', router);
+
+
+    // ===================================================================================
+    // 🎨 4. UI TEMPLATES & COMPONENTS
+    // ===================================================================================
+
+    const Navbar = (showFilters = false) => `
+        <nav class="bg-white dark:bg-gray-800 sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700">
+            <!-- MODIFIED: Set max-width and padding for boxed layout -->
+            <div class="w-full max-w-7xl mx-auto px-6">
+                <div class="flex justify-between items-center h-16">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="/" class="text-2xl font-bold text-gray-800 dark:text-white" data-link>
+                            Gemini Magazine
+                        </a>
+                    </div>
+                    
+                    <!-- Desktop Navigation Links -->
+                    <div class="hidden md:flex items-center space-x-2 sm:space-x-4">
+                        <a href="/" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Home</a>
+                        <a href="/about" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>About</a>
+                        <a href="/contact" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Contact</a>
+                        
+                        <!-- NEW: Conditionally render search/filter -->
+                        ${showFilters ? `
+                        <input type="search" id="search-input" placeholder="Search..." class="w-36 px-3 py-1.5 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <select id="category-filter" class="w-36 px-3 py-1.5 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="all">All Categories</option>
+                            <!-- Populated by JS -->
+                        </select>
+                        ` : `
+                        <!-- Desktop Category Dropdown (now only for non-home pages) -->
+                        <div class="relative">
+                            <button type="button" id="category-dropdown-toggle" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center focus:outline-none">
+                                <span>Categories</span>
+                                <svg class="ml-1 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <div id="category-dropdown-menu" class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-50">
+                                <div id="category-links-container" class="py-1" role="menu" aria-orientation="vertical">
+                                    <p class="px-4 py-2 text-sm text-gray-500">Loading...</p>
+                                </div>
+                            </div>
+                        </div>
+                        `}
+                        
+                        <a href="/admin" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Admin</a>
+                        
+                        <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none">
+                            <svg id="theme-icon-light" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                            <svg id="theme-icon-dark" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Mobile Menu Toggle -->
+                    <div class="flex items-center md:hidden">
+                        <button id="theme-toggle-mobile" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none">
+                            <!-- Icons will be synced by JS -->
+                        </button>
+                        <button id="mobile-menu-toggle" class="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path id="menu-open-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                                <path id="menu-close-icon" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="hidden md:hidden absolute top-16 left-0 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50">
+                <div class="px-2 pt-2 pb-3 space-y-1">
+                    <a href="/" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Home</a>
+                    <a href="/about" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>About</a>
+                    <a href="/contact" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Contact</a>
+                    <a href="/admin" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Admin</a>
+                    
+                    ${showFilters ? '' : `
+                    <!-- Mobile Category Dropdown (now only for non-home pages) -->
+                    <div>
+                        <button type="button" id="mobile-category-toggle" class="w-full flex justify-between items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <span>Categories</span>
+                            <svg class="ml-1 h-5 w-5 text-gray-400 transform transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <div id="mobile-category-links-container" class="hidden pl-4 mt-1 space-y-1">
+                            <!-- Mobile categories will be populated here -->
+                        </div>
+                    </div>
+                    `}
+                </div>
+                <!-- Search/Filter in Mobile Menu (populated by condition) -->
+                ${showFilters ? `
+                <div id="mobile-filter-container" class="p-4 border-t border-gray-200 dark:border-gray-700">
+                     <div class="space-y-4">
+                        <input type="search" id="search-input-mobile" placeholder="Search articles..." class="w-full px-4 py-2 border rounded-md bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <select id="category-filter-mobile" class="w-full px-4 py-2 border rounded-md bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="all">All Categories</option>
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        </nav>
+        
+        <!-- This slot is for the sticky filter bar on desktop -->
+    `;
+
+    const Footer = () => `
+        <footer class="bg-white dark:bg-gray-800 mt-12 py-8 border-t border-gray-200 dark:border-gray-700">
+            <!-- MODIFIED: Applied consistent padding and max-width -->
+            <div class="w-full max-w-7xl mx-auto px-6 text-center text-gray-600 dark:text-gray-400">
+                &copy; ${new Date().getFullYear()} Gemini Magazine. All rights reserved.
+            </div>
+        </footer>
+    `;
+
+    const ArticleCard = (article) => `
+        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:border-gray-300 dark:hover:border-gray-500">
+            <img class="w-full h-48 object-cover" src="${article.imageURL}" alt="${article.title}">
+            <div class="p-6">
+                <span class="text-sm text-indigo-500 dark:text-indigo-400 font-semibold">${article.category}</span>
+                <h3 class="mt-2 text-xl font-bold text-gray-900 dark:text-white">${article.title}</h3>
+                <p class="mt-2 text-gray-600 dark:text-gray-400">${article.content.substring(0, 100)}...</p>
+                <div class="mt-4 flex items-center">
+                    <div class="text-sm">
+                        <p class="text-gray-900 dark:text-white font-semibold">${article.author}</p>
+                        <p class="text-gray-500 dark:text-gray-400">${formatDate(article.timestamp)}</p>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <a href="/article/${article.id}" data-link class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 font-semibold">Read More &rarr;</a>
+                </div>
+            </div>
+        </div>
+    `;
+
+    /**
+     * Component for a single slide in the slideshow
+     */
+    const SlideshowCard = (article) => `
+        <div class="w-full h-[85vh] relative flex-shrink-0">
+            <img src="${article.imageURL}" alt="${article.title}" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 p-12 md:p-16">
+                <span class="text-sm bg-indigo-600 text-white px-3 py-1 rounded font-semibold">${article.category}</span>
+                <h2 class="text-3xl md:text-4xl font-bold text-white mt-4 max-w-3xl">${article.title}</h2>
+                <p class="text-gray-200 mt-2">By ${article.author} &bull; ${formatDate(article.timestamp)}</p>
+                <a href="/article/${article.id}" data-link class="mt-4 inline-block text-white font-semibold border-b-2 border-indigo-500 hover:border-white transition">
+                    Read More &rarr;
+                </a>
+            </div>
+        </div>
+    `;
+
+    /**
+     * Component for the main slideshow container
+     */
+    const TrendingSlideshow = (articles) => `
+        <section class="relative w-full overflow-hidden bg-gray-200 dark:bg-gray-800">
+            <!-- Slides Track -->
+            <div id="slideshow-track" class="flex transition-transform duration-500 ease-in-out">
+                ${articles.map(SlideshowCard).join('')}
+            </div>
+            
+            <!-- Controls: Prev/Next Buttons -->
+            <button id="slideshow-prev" class="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/20 dark:bg-black/20 text-white p-3 rounded-full backdrop-blur-sm hover:bg-white/40 dark:hover:bg-black/40 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <button id="slideshow-next" class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white/20 dark:bg-black/20 text-white p-3 rounded-full backdrop-blur-sm hover:bg-white/40 dark:hover:bg-black/40 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+
+            <!-- Controls: Dots -->
+            <div id="slideshow-dots" class="absolute bottom-5 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                ${articles.map((_, index) => `<button class="slideshow-dot h-3 w-3 rounded-full ${index === 0 ? 'bg-white' : 'bg-white/50'}" data-slide="${index}"></button>`).join('')}
+            </div>
+        </section>
+    `;
+
+
+    // ===================================================================================
+    // 📄 5. PAGE RENDER FUNCTIONS
+    // ===================================================================================
+
+    async function renderHomePage() {
+        await fetchArticlesAndCategories(); // Ensure data is fresh
+        
+        // Use first 5 articles for the slideshow
+        const trendingArticles = state.articles.slice(0, 5);
+        
+        // NEW: Get next 3 articles for "Featured"
+        const featuredArticles = state.articles.slice(5, 8); 
+
+        // This logic remains the same for the main grid
+        const latestArticles = state.filteredArticles.length > 0 ? state.filteredArticles : state.articles;
+        
+        // NEW: Define the filter bar HTML
+        // REMOVED filterBarHtml
+
+        // MODIFIED: Pass true to Navbar to show filters
+        // Main content is now wrapped section by section for full-width slideshow
+        app.innerHTML = `
+            ${Navbar(true)}
+            <main>
+                <!-- 1. Trending Posts Slideshow - NOW FULL WIDTH -->
+                ${trendingArticles.length > 0 ? `
+                <section class="pb-12 bg-gray-100 dark:bg-gray-900">
+                    ${TrendingSlideshow(trendingArticles)}
+                </section>
+                ` : ''}
+
+                <!-- 2. Filter Bar Section (REMOVED from here) -->
+
+                <!-- 3. NEW: Featured Posts Section -->
+                ${featuredArticles.length > 0 ? `
+                <section class="w-full max-w-7xl mx-auto px-6 py-16">
+                    <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-8">Featured Posts</h2>
+                    <div class="grid md:grid-cols-3 gap-10">
+                        ${featuredArticles.map(ArticleCard).join('')}
+                    </div>
+                </section>
+                <div class="w-full max-w-7xl mx-auto px-6">
+                    <hr class="border-gray-200 dark:border-gray-700">
+                </div>
+                ` : ''}
+
+                <!-- 4. Latest Posts Section (Modified title) -->
+                <section class="w-full max-w-7xl mx-auto px-6 py-16">
+                    <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-8">All Latest Posts</h2>
+                    <div id="latest-posts-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+                        ${latestArticles.length > 0 ? latestArticles.map(ArticleCard).join('') : '<p>No articles found.</p>'}
+                    </div>
+                </section>
+            </main>
+        `;
+        
+        // We now need to attach listeners
+        attachHomeEventListeners(trendingArticles.length); // Pass slide count
+        attachThemeToggleListener(); // Attach theme toggle
+        attachNavbarListeners(); // NEW: Attach listeners for dropdown
+        await populateNavFilters(); // NEW: Populate filters in nav
+        
+        // REMOVED: Mobile filter content moving logic
+    }
+
+    async function renderArticlePage(articleId) {
+        try {
+            const snapshot = await db.ref(`articles/${articleId}`).once('value');
+            const article = snapshot.val();
+            if (!article) {
+                renderNotFoundPage();
+                return;
+            }
+
+            const commentsSnapshot = await db.ref(`comments/${articleId}`).once('value');
+            const commentsData = commentsSnapshot.val() || {};
+            const comments = Object.values(commentsData).sort((a,b) => b.timestamp - a.timestamp);
+
+            // Fetch related posts (e.g., in the same category)
+            const relatedSnapshot = await db.ref('articles').orderByChild('category').equalTo(article.category).limitToFirst(4).once('value');
+            const relatedArticlesData = relatedSnapshot.val() || {};
+            const relatedArticles = Object.entries(relatedArticlesData)
+                .map(([id, data]) => ({ id, ...data }))
+                .filter(a => a.id !== articleId)
+                .slice(0, 3);
+
+            // MODIFIED: Wrapped in main container
+            app.innerHTML = `
+                ${Navbar()}
+                <main class="w-full max-w-7xl mx-auto px-6 py-12">
+                    <article class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                        <img class="w-full h-96 object-cover" src="${article.imageURL}" alt="${article.title}">
+                        <div class="p-8 md:p-12">
+                            <span class="text-sm text-indigo-500 dark:text-indigo-400 font-semibold">${article.category}</span>
+                            <h1 class="text-4xl md:text-5xl font-extrabold mt-2 text-gray-900 dark:text-white">${article.title}</h1>
+                            <div class="mt-4 flex items-center text-gray-500 dark:text-gray-400">
+                                <span>By ${article.author}</span>
+                                <span class="mx-2">&bull;</span>
+                                <span>${formatDate(article.timestamp)}</span>
+                            </div>
+                            <div class="mt-8 prose lg:prose-xl dark:prose-invert max-w-none">
+                                ${article.content.replace(/\n/g, '<br>')}
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- Related Posts -->
+                    <section class="max-w-4xl mx-auto mt-16">
+                         <h2 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Related Posts</h2>
+                         <div class="grid md:grid-cols-3 gap-8">
+                            ${relatedArticles.length > 0 ? relatedArticles.map(ArticleCard).join('') : '<p>No related articles found.</p>'}
+                         </div>
+                    </section>
+                    
+                     <!-- Comments Section -->
+                    <section class="max-w-4xl mx-auto mt-16">
+                        <h2 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Comments (${comments.length})</h2>
+                        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                            <form id="comment-form">
+                                <div class="mb-4">
+                                    <input type="text" id="comment-name" placeholder="Your Name" required class="w-full px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                                <div class="mb-4">
+                                    <textarea id="comment-message" placeholder="Your Comment" rows="4" required class="w-full px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                                </div>
+                                <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 transition">Post Comment</button>
+                            </form>
+                            <div id="comments-list" class="mt-8 space-y-6">
+                                ${comments.map(c => `
+                                    <div class="flex space-x-4">
+                                        <div class="flex-shrink-0">
+                                            <div class="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center font-bold text-gray-600 dark:text-gray-300">${c.name.charAt(0)}</div>
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-gray-900 dark:text-white">${c.name} <span class="text-sm font-normal text-gray-500 dark:text-gray-400">- ${formatDate(c.timestamp)}</span></p>
+                                            <p class="text-gray-700 dark:text-gray-300">${c.message}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </section>
+                </main>
+            `;
+            attachArticlePageListeners(articleId);
+            attachThemeToggleListener(); // NEW
+            attachNavbarListeners(); // NEW
+            populateCategoriesInNav(); // NEW
+        } catch (error) {
+            console.error("Error fetching article:", error);
+            renderNotFoundPage();
+        }
+    }
+
+    // --- NEW RENDER FUNCTIONS ---
+    async function renderAboutPage() {
+        app.innerHTML = `
+            ${Navbar()}
+            <main class="w-full max-w-7xl mx-auto px-6 py-12">
+                <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 md:p-12">
+                    <h1 class="text-4xl font-extrabold mt-2 text-gray-900 dark:text-white">About Gemini Magazine</h1>
+                    <div class="mt-8 prose lg:prose-xl dark:prose-invert max-w-none">
+                        <p>Welcome to Gemini Magazine, your number one source for all things tech, culture, and beyond. We're dedicated to giving you the very best of digital content, with a focus on quality, reliability, and uniqueness.</p>
+                        <p>Founded in 2025, Gemini Magazine has come a long way from its beginnings. When we first started out, our passion for high-quality journalism drove us to quit our day jobs and turn hard work and inspiration into a booming online magazine. We now serve readers all over the world and are thrilled to be a part of the dynamic wing of the media industry.</p>
+                        <p>We hope you enjoy our articles as much as we enjoy offering them to you. If you have any questions or comments, please don't hesitate to contact us.</p>
+                    </div>
+                </div>
+            </main>
+        `;
+        attachThemeToggleListener();
+        attachNavbarListeners();
+        populateCategoriesInNav();
+    }
+
+    async function renderContactPage() {
+        app.innerHTML = `
+            ${Navbar()}
+            <main class="w-full max-w-7xl mx-auto px-6 py-12">
+                <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 md:p-12">
+                    <h1 class="text-4xl font-extrabold mt-2 text-gray-900 dark:text-white">Contact Us</h1>
+                    <p class="mt-4 text-lg text-gray-600 dark:text-gray-300">Have a tip, question, or just want to say hi? Fill out the form below.</p>
+                    
+                    <form id="contact-form" class="mt-8 space-y-6">
+                        <div>
+                            <label for="contact-name" class="block text-sm font-medium">Name</label>
+                            <input type="text" id="contact-name" required class="mt-1 w-full form-input">
+                        </div>
+                        <div>
+                            <label for="contact-email" class="block text-sm font-medium">Email</label>
+                            <input type="email" id="contact-email" required class="mt-1 w-full form-input">
+                        </div>
+                        <div>
+                            <label for="contact-message" class="block text-sm font-medium">Message</label>
+                            <textarea id="contact-message" rows="5" required class="mt-1 w-full form-input"></textarea>
+                        </div>
+                        <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 transition">Send Message</button>
+                    </form>
+                </div>
+            </main>
+            <!-- Add form-input styles for this page -->
+            <style>
+                .form-input {
+                    padding: 0.5rem 0.75rem; border-radius: 0.375rem;
+                    background-color: rgb(249 250 251); border: 1px solid rgb(209 213 219);
+                }
+                .dark .form-input {
+                     background-color: rgb(55 65 81); border-color: rgb(75 85 99);
+                }
+                .form-input:focus {
+                    outline: 2px solid transparent; outline-offset: 2px;
+                    --tw-ring-color: rgb(99 102 241); box-shadow: 0 0 0 2px var(--tw-ring-color);
+                }
+            </style>
+        `;
+        attachThemeToggleListener();
+        attachNavbarListeners();
+        populateCategoriesInNav();
+        
+        // Add listener for contact form
+        document.getElementById('contact-form')?.addEventListener('submit', e => {
+            e.preventDefault();
+            showToast('Message sent! (Demo)', 'success');
+            e.target.reset();
+        });
+    }
+    // --- END NEW RENDER FUNCTIONS ---
+
+    function renderAdminLoginPage() {
+        if (state.currentUser) {
+            navigateTo('/admin/dashboard');
+            return;
+        }
+        // This page remains full-width
+        app.innerHTML = `
+            <div class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+                <div class="max-w-md w-full bg-white dark:bg-gray-800 p-8 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <h2 class="text-3xl font-bold text-center mb-6 text-gray-900 dark:text-white">Admin Login</h2>
+                    <form id="login-form">
+                        <div class="mb-4">
+                            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                            <input type="email" id="email" required class="mt-1 w-full px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div class="mb-6">
+                            <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                            <input type="password" id="password" required class="mt-1 w-full px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <p id="login-error" class="text-red-500 text-sm mb-4"></p>
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 transition">Login</button>
+                    </form>
+                    <p class="text-center mt-4"><a href="/" data-link class="text-indigo-500 hover:underline">← Back to Magazine</a></p>
+                </div>
+            </div>
+        `;
+        attachAdminLoginListeners();
+    }
+
+    async function renderAdminDashboard(activeTab = 'dashboard') {
+        await fetchArticlesAndCategories();
+
+        const getTabClass = (tabName) => activeTab === tabName 
+            ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' 
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300';
+        
+        const tabContent = {
+            dashboard: `
+                <h3 class="text-2xl font-semibold mb-6">Dashboard</h3>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-gray-700 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <h4 class="text-lg font-semibold text-gray-500 dark:text-gray-300">Total Articles</h4>
+                        <p class="text-4xl font-bold mt-2">${state.articles.length}</p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-700 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <h4 class="text-lg font-semibold text-gray-500 dark:text-gray-300">Total Categories</h4>
+                        <p class="text-4xl font-bold mt-2">${Object.keys(state.categories).length}</p>
+                    </div>
+                     <div class="bg-white dark:bg-gray-700 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <h4 class="text-lg font-semibold text-gray-500 dark:text-gray-300">Admin</h4>
+                        <p class="text-xl font-bold mt-2 truncate">${state.currentUser?.email || 'Admin'}</p>
+                    </div>
+                </div>
+            `,
+            articles: `
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-semibold">Manage Articles</h3>
+                    <button id="add-article-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Add New Article</button>
+                </div>
+                <!-- Article Form (hidden by default) -->
+                <div id="article-form-container" class="hidden bg-white dark:bg-gray-700 p-6 rounded-lg border border-gray-200 dark:border-gray-700 mb-6">
+                    <form id="article-form">
+                        <input type="hidden" id="article-id">
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="title" class="block text-sm font-medium">Title</label>
+                                <input type="text" id="title" required class="mt-1 w-full form-input">
+                            </div>
+                            <div>
+                                <label for="author" class="block text-sm font-medium">Author</label>
+                                <input type="text" id="author" required class="mt-1 w-full form-input">
+                            </div>
+                            <div>
+                                <label for="category" class="block text-sm font-medium">Category</label>
+                                <select id="category" required class="mt-1 w-full form-input">
+                                    ${Object.keys(state.categories).map(c => `<option value="${c}">${c}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label for="imageURL" class="block text-sm font-medium">Image URL</label>
+                                <input type="url" id="imageURL" required class="mt-1 w-full form-input">
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <label for="content" class="block text-sm font-medium">Content</label>
+                            <textarea id="content" rows="10" required class="mt-1 w-full form-input"></textarea>
+                        </div>
+                        <div class="mt-6 flex justify-end space-x-4">
+                            <button type="button" id="cancel-edit-btn" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Cancel</button>
+                            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">Save Article</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Articles Table -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="p-4 font-semibold">Title</th>
+                                <th class="p-4 font-semibold">Category</th>
+                                <th class="p-4 font-semibold">Author</th>
+                                <th class="p-4 font-semibold">Date</th>
+                                <th class="p-4 font-semibold">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            ${state.articles.map(article => `
+                                <tr data-id="${article.id}">
+                                    <td class="p-4">${article.title}</td>
+                                    <td class="p-4">${article.category}</td>
+                                    <td class="p-4">${article.author}</td>
+                                    <td class="p-4">${formatDate(article.timestamp)}</td>
+                                    <td class="p-4 space-x-2">
+                                        <button class="edit-btn text-blue-500 hover:underline">Edit</button>
+                                        <button class="delete-btn text-red-500 hover:underline">Delete</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `,
+            categories: `
+                 <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-semibold">Manage Categories</h3>
+                 </div>
+                 <div class="grid md:grid-cols-2 gap-8">
+                     <!-- Add Category Form -->
+                     <div>
+                        <div class="bg-white dark:bg-gray-700 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                           <h4 class="text-lg font-semibold mb-4">Add New Category</h4>
+                           <form id="category-form">
+                                <label for="new-category-name" class="block text-sm font-medium">Category Name</label>
+                                <input type="text" id="new-category-name" required class="mt-1 w-full form-input">
+                                <button type="submit" class="mt-4 w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700">Add Category</button>
+                           </form>
+                        </div>
+                     </div>
+                     <!-- Categories List -->
+                     <div>
+                         <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                             <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                                ${Object.keys(state.categories).map(category => `
+                                    <li class="p-4 flex justify-between items-center" data-category="${category}">
+                                        <span>${category}</span>
+                                        <button class="delete-category-btn text-red-500 hover:text-red-700 text-sm">Delete</button>
+                                    </li>
+                                `).join('')}
+                             </ul>
+                         </div>
+                     </div>
+                 </div>
+            `
+        };
+
+        // This page remains full-width
+        app.innerHTML = `
+            <div class="flex h-screen bg-gray-100 dark:bg-gray-900">
+                <!-- Sidebar -->
+                <div class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+                    <div class="p-6 text-2xl font-bold border-b border-gray-200 dark:border-gray-700">Admin Panel</div>
+                    <nav class="flex-1 p-4 space-y-2">
+                        <a href="#" class="admin-nav-link block px-4 py-2 rounded ${getTabClass('dashboard')}" data-tab="dashboard">Dashboard</a>
+                        <a href="#" class="admin-nav-link block px-4 py-2 rounded ${getTabClass('articles')}" data-tab="articles">Articles</a>
+                        <a href="#" class="admin-nav-link block px-4 py-2 rounded ${getTabClass('categories')}" data-tab="categories">Categories</a>
+                    </nav>
+                    <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                         <a href="/" data-link class="block text-center text-indigo-500 mb-2 hover:underline">← View Site</a>
+                        <button id="logout-btn" class="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600">Logout</button>
+                    </div>
+                </div>
+                <!-- Main Content -->
+                <main class="flex-1 p-8 overflow-y-auto">
+                    ${tabContent[activeTab]}
+                </main>
+            </div>
+            <style>
+                .form-input {
+                    padding: 0.5rem 0.75rem;
+                    border-radius: 0.375rem;
+                    background-color: rgb(249 250 251);
+                    border: 1px solid rgb(209 213 219);
+                }
+                .dark .form-input {
+                     background-color: rgb(55 65 81);
+                     border-color: rgb(75 85 99);
+                }
+                .form-input:focus {
+                    outline: 2px solid transparent;
+                    outline-offset: 2px;
+                    --tw-ring-color: rgb(99 102 241);
+                    box-shadow: 0 0 0 2px var(--tw-ring-color);
+                }
+            </style>
+        `;
+        attachAdminDashboardListeners();
+    }
+    
+    function renderNotFoundPage() {
+        app.innerHTML = `
+            ${Navbar()}
+            <main class="w-full max-w-7xl mx-auto px-6 py-20 text-center">
+                <h1 class="text-6xl font-extrabold text-indigo-600">404</h1>
+                <p class="mt-4 text-2xl text-gray-700 dark:text-gray-300">Page Not Found</p>
+                <p class="mt-2 text-gray-500">The page you're looking for doesn't exist.</p>
+                <a href="/" data-link class="mt-8 inline-block bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700 transition">Go Home</a>
+            </main>
+        `;
+        attachThemeToggleListener();
+        attachNavbarListeners();
+        populateCategoriesInNav(); // NEW: Populate categories here too
+    }
+
+    // ===================================================================================
+    // 💾 6. FIREBASE DATABASE & AUTH FUNCTIONS
+    // ===================================================================================
+
+    async function fetchArticlesAndCategories() {
+        try {
+            const articlesSnapshot = await db.ref('articles').once('value');
+            const articlesData = articlesSnapshot.val() || {};
+            state.articles = Object.entries(articlesData)
+                .map(([id, data]) => ({ id, ...data }))
+                .sort((a, b) => b.timestamp - a.timestamp);
+
+            const categoriesSnapshot = await db.ref('categories').once('value');
+            state.categories = categoriesSnapshot.val() || {};
+        } catch (error) {
+            console.error("Error fetching data from Firebase:", error);
+            showToast('Could not fetch data.', 'error');
+        }
+    }
+    
+    function handleLogin(email, password) {
+        auth.signInWithEmailAndPassword(email, password)
+            .then(userCredential => {
+                showToast('Login successful!', 'success');
+                navigateTo('/admin/dashboard');
+            })
+            .catch(error => {
+                const errorEl = document.getElementById('login-error');
+                if (errorEl) errorEl.textContent = error.message;
+            });
+    }
+
+    function handleLogout() {
+        auth.signOut().then(() => {
+            showToast('Logged out successfully.');
+            navigateTo('/admin');
+        });
+    }
+    
+    function handleArticleSubmit(event) {
+        event.preventDefault();
+        const form = event.target;
+        const id = form['article-id'].value;
+        
+        const articleData = {
+            title: form.title.value,
+            author: form.author.value,
+            category: form.category.value,
+            imageURL: form.imageURL.value,
+            content: form.content.value,
+            timestamp: id ? (state.articles.find(a=>a.id === id).timestamp || Date.now()) : Date.now()
+        };
+        
+        const dbRef = id ? db.ref(`articles/${id}`) : db.ref('articles').push();
+        
+        dbRef.set(articleData)
+            .then(() => {
+                showToast(`Article ${id ? 'updated' : 'created'} successfully!`, 'success');
+                renderAdminDashboard('articles'); // Re-render the articles tab
+            })
+            .catch(error => {
+                showToast(`Error: ${error.message}`, 'error');
+            });
+    }
+
+    function handleArticleDelete(id) {
+        if (confirm('Are you sure you want to delete this article?')) {
+            db.ref(`articles/${id}`).remove()
+                .then(() => {
+                    showToast('Article deleted.', 'success');
+                    renderAdminDashboard('articles');
+                })
+                .catch(error => showToast(`Error: ${error.message}`, 'error'));
+        }
+    }
+    
+    function handleCategorySubmit(event) {
+        event.preventDefault();
+        const newCategory = document.getElementById('new-category-name').value.trim();
+        if (newCategory) {
+            db.ref(`categories/${newCategory}`).set(true)
+                .then(() => {
+                    showToast('Category added!', 'success');
+                    renderAdminDashboard('categories');
+                })
+                .catch(error => showToast(`Error: ${error.message}`, 'error'));
+        }
+    }
+    
+    function handleCategoryDelete(categoryName) {
+        if(confirm(`Are you sure you want to delete the "${categoryName}" category?`)) {
+            db.ref(`categories/${categoryName}`).remove()
+                .then(() => {
+                    showToast('Category deleted.', 'success');
+                    renderAdminDashboard('categories');
+                })
+                .catch(error => showToast(`Error: ${error.message}`, 'error'));
+        }
+    }
+    
+    function handleCommentSubmit(articleId, name, message) {
+        const commentData = {
+            name,
+            message,
+            timestamp: Date.now()
+        };
+        db.ref(`comments/${articleId}`).push(commentData)
+            .then(() => {
+                showToast('Comment posted!', 'success');
+                renderArticlePage(articleId); // Re-render to show new comment
+            })
+            .catch(error => showToast(`Error: ${error.message}`, 'error'));
+    }
+
+
+    // ===================================================================================
+    // 🎧 7. EVENT LISTENERS
+    // ===================================================================================
+
+    // Use event delegation on the `app` container for dynamically added elements
+    document.addEventListener('click', event => {
+        // Handle router links
+        const link = event.target.closest('[data-link]');
+        if (link) {
+            event.preventDefault();
+            navigateTo(link.getAttribute('href'));
+        }
+    });
+
+    // NEW: Listeners for Navbar
+    function attachNavbarListeners() {
+        const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const openIcon = document.getElementById('menu-open-icon');
+        const closeIcon = document.getElementById('menu-close-icon');
+        
+        const desktopCategoryToggle = document.getElementById('category-dropdown-toggle');
+        const desktopCategoryMenu = document.getElementById('category-dropdown-menu');
+        
+        const mobileCategoryToggle = document.getElementById('mobile-category-toggle');
+        const mobileCategoryMenu = document.getElementById('mobile-category-links-container');
+
+        // Mobile Menu Toggle
+        if (mobileMenuToggle && mobileMenu) {
+            mobileMenuToggle.addEventListener('click', () => {
+                const isHidden = mobileMenu.classList.toggle('hidden');
+                openIcon?.classList.toggle('hidden', !isHidden);
+                closeIcon?.classList.toggle('hidden', isHidden);
+            });
+        }
+        
+        // Close mobile menu when a link is clicked
+        if (mobileMenu) {
+            mobileMenu.addEventListener('click', (e) => {
+                if (e.target.closest('[data-link]') || e.target.closest('[data-category-filter]')) {
+                    mobileMenu.classList.add('hidden');
+                    openIcon?.classList.remove('hidden');
+                    closeIcon?.classList.add('hidden');
+                }
+            });
+        }
+
+        // Desktop Category Dropdown
+        if (desktopCategoryToggle && desktopCategoryMenu) {
+            desktopCategoryToggle.addEventListener('click', (e) => {
+                e.stopPropagation(); // prevent document click listener
+                desktopCategoryMenu.classList.toggle('hidden');
+            });
+        }
+        
+        // Mobile Category Dropdown
+        if (mobileCategoryToggle && mobileCategoryMenu) {
+            mobileCategoryToggle.addEventListener('click', () => {
+                mobileCategoryMenu.classList.toggle('hidden');
+                mobileCategoryToggle.querySelector('svg').classList.toggle('rotate-180');
+            });
+        }
+
+        // Close desktop dropdown if clicking outside
+        document.addEventListener('click', (e) => {
+            if (desktopCategoryMenu && !desktopCategoryMenu.classList.contains('hidden')) {
+                if (!desktopCategoryToggle.contains(e.target) && !desktopCategoryMenu.contains(e.target)) {
+                    desktopCategoryMenu.classList.add('hidden');
+                }
+            }
+        }, true);
+        
+        // Category filter link listeners (for both desktop and mobile)
+        const setupCategoryLinkListeners = (containerId) => {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            container.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = e.target.closest('[data-category-filter]');
+                if (target) {
+                    const category = target.dataset.categoryFilter;
+                    
+                    // Navigate to home page
+                    navigateTo('/');
+                    
+                    // Wait for home page to render, then apply filter
+                    setTimeout(() => {
+                        // Check both desktop and mobile filters
+                        const filterSelectDesktop = document.getElementById('category-filter');
+                        const filterSelectMobile = document.getElementById('category-filter-mobile');
+                        
+                        if (filterSelectDesktop) {
+                            filterSelectDesktop.value = category;
+                            filterSelectDesktop.dispatchEvent(new Event('change'));
+                        }
+                        if (filterSelectMobile) {
+                             filterSelectMobile.value = category;
+                             filterSelectMobile.dispatchEvent(new Event('change'));
+                        }
+                        
+                        // Close menus
+                        if (desktopCategoryMenu) desktopCategoryMenu.classList.add('hidden');
+                        if (mobileMenu) mobileMenu.classList.add('hidden'); // Close mobile menu too
+                        openIcon?.classList.remove('hidden');
+                		closeIcon?.classList.add('hidden');
+                        
+                    }, 500); // 500ms for router transition
+                }
+            });
+        };
+        
+        setupCategoryLinkListeners('category-links-container'); // Desktop
+        setupCategoryLinkListeners('mobile-category-links-container'); // Mobile
+    }
+
+    function attachHomeEventListeners(slideCount) {
+        // --- Filter Logic (Now handles both desktop and mobile) ---
+        const searchInputDesktop = document.getElementById('search-input');
+        const categoryFilterDesktop = document.getElementById('category-filter');
+        const searchInputMobile = document.getElementById('search-input-mobile');
+        const categoryFilterMobile = document.getElementById('category-filter-mobile');
+        
+        const applyFilters = () => {
+            // Read from desktop inputs, as they are the "master"
+            const searchTerm = searchInputDesktop?.value.toLowerCase() || "";
+            const selectedCategory = categoryFilterDesktop?.value || "all";
+
+            state.filteredArticles = state.articles.filter(article => {
+                const matchesSearch = article.title.toLowerCase().includes(searchTerm) || article.content.toLowerCase().includes(searchTerm);
+                const matchesCategory = selectedCategory === 'all' || article.category === selectedCategory;
+                return matchesSearch && matchesCategory;
+            });
+            
+            const grid = document.getElementById('latest-posts-grid');
+            if(grid) {
+                grid.innerHTML = state.filteredArticles.length > 0
+                    ? state.filteredArticles.map(ArticleCard).join('')
+                    : '<p class="col-span-full text-center">No articles match your criteria.</p>';
+            }
+        };
+
+        // Sync desktop and mobile inputs
+        const syncInputs = (source, target) => {
+            if (source && target) {
+                target.value = source.value;
+            }
+        };
+        
+        searchInputDesktop?.addEventListener('input', () => {
+            syncInputs(searchInputDesktop, searchInputMobile);
+            applyFilters();
+        });
+        categoryFilterDesktop?.addEventListener('change', () => {
+            syncInputs(categoryFilterDesktop, categoryFilterMobile);
+            applyFilters();
+        });
+        searchInputMobile?.addEventListener('input', () => {
+            syncInputs(searchInputMobile, searchInputDesktop);
+            applyFilters();
+        });
+        categoryFilterMobile?.addEventListener('change', () => {
+            syncInputs(categoryFilterMobile, categoryFilterDesktop);
+            applyFilters();
+        });
+        
+        // --- Slideshow Logic ---
+        if (slideCount > 0) {
+            let currentSlide = 0;
+            const track = document.getElementById('slideshow-track');
+            const dots = document.querySelectorAll('.slideshow-dot');
+            const nextBtn = document.getElementById('slideshow-next');
+            const prevBtn = document.getElementById('slideshow-prev');
+
+            const updateSlide = (index) => {
+                if (track) {
+                    track.style.transform = `translateX(-${index * 100}%)`;
+                }
+                dots.forEach((dot, i) => {
+                    dot.classList.toggle('bg-white', i === index);
+                    dot.classList.toggle('bg-white/50', i !== index);
+                });
+                currentSlide = index;
+            };
+
+            const goToNext = () => {
+                const nextIndex = (currentSlide + 1) % slideCount;
+                updateSlide(nextIndex);
+            };
+
+            const goToPrev = () => {
+                const prevIndex = (currentSlide - 1 + slideCount) % slideCount;
+                updateSlide(prevIndex);
+            };
+
+            nextBtn?.addEventListener('click', goToNext);
+            prevBtn?.addEventListener('click', goToPrev);
+
+            dots.forEach(dot => {
+                dot.addEventListener('click', () => {
+                    updateSlide(parseInt(dot.dataset.slide));
+                });
+            });
+
+            // Auto-play
+            setInterval(goToNext, 5000); // Change slide every 5 seconds
+        }
+    }
+
+    function attachArticlePageListeners(articleId) {
+        const commentForm = document.getElementById('comment-form');
+        commentForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('comment-name').value;
+            const message = document.getElementById('comment-message').value;
+            handleCommentSubmit(articleId, name, message);
+        });
+        // Theme and Nav listeners are now called from renderArticlePage
+    }
+
+    function attachAdminLoginListeners() {
+        const loginForm = document.getElementById('login-form');
+        loginForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            handleLogin(email, password);
+        });
+    }
+
+    function attachAdminDashboardListeners() {
+        // Navigation between tabs
+        document.querySelectorAll('.admin-nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tab = e.target.dataset.tab;
+                renderAdminDashboard(tab);
+            });
+        });
+
+        document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
+        
+        // Article form logic
+        const articleFormContainer = document.getElementById('article-form-container');
+        const articleForm = document.getElementById('article-form');
+        const addBtn = document.getElementById('add-article-btn');
+        const cancelBtn = document.getElementById('cancel-edit-btn');
+        
+        const showArticleForm = (article = null) => {
+            if (articleForm) {
+                articleForm.reset();
+                articleForm['article-id'].value = article ? article.id : '';
+                if (article) {
+                    articleForm.title.value = article.title;
+                    articleForm.author.value = article.author;
+                    articleForm.category.value = article.category;
+                    articleForm.imageURL.value = article.imageURL;
+                    articleForm.content.value = article.content;
+                }
+            }
+            if(articleFormContainer) articleFormContainer.style.display = 'block';
+        };
+        
+        addBtn?.addEventListener('click', () => showArticleForm());
+        cancelBtn?.addEventListener('click', () => {
+            if(articleFormContainer) articleFormContainer.style.display = 'none';
+        });
+        articleForm?.addEventListener('submit', handleArticleSubmit);
+
+        // Edit/Delete buttons in article table
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const articleId = e.target.closest('tr').dataset.id;
+                const articleToEdit = state.articles.find(a => a.id === articleId);
+                showArticleForm(articleToEdit);
+                window.scrollTo(0, 0);
+            });
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const articleId = e.target.closest('tr').dataset.id;
+                handleArticleDelete(articleId);
+            });
+        });
+        
+        // Category form logic
+        document.getElementById('category-form')?.addEventListener('submit', handleCategorySubmit);
+        document.querySelectorAll('.delete-category-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const categoryName = e.target.closest('li').dataset.category;
+                handleCategoryDelete(categoryName);
+            });
+        });
+    }
+    
+    function attachThemeToggleListener() {
+        const toggleButtons = [
+            document.getElementById('theme-toggle'),
+            document.getElementById('theme-toggle-mobile')
+        ];
+        
+        const lightIconSvg = `<svg id="theme-icon-light" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>`;
+        const darkIconSvg = `<svg id="theme-icon-dark" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                            </svg>`;
+        
+        const updateIcon = () => {
+             if (document.documentElement.classList.contains('dark')) {
+                toggleButtons.forEach(btn => {
+                    if (btn) btn.innerHTML = lightIconSvg;
+                });
+            } else {
+                toggleButtons.forEach(btn => {
+                    if (btn) btn.innerHTML = darkIconSvg;
+                });
+            }
+        };
+        
+        toggleButtons.forEach(btn => {
+            btn?.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+                updateIcon();
+            });
+        });
+        
+        updateIcon();
+    }
+
+
+    // ===================================================================================
+    // 🚀 8. APP INITIALIZATION
+    // ===================================================================================
+
+    function initializeApp() {
+        // Check for saved theme preference
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+
+        // Keep user state in sync
+        auth.onAuthStateChanged(user => {
+            state.currentUser = user;
+            // Re-route on auth state change to handle route protection
+            // We call router() directly without waiting for DOMContentLoaded
+            // because this is an event handler that can fire at any time.
+            router();
+        });
+
+        // Initial route call on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Only call router if auth hasn't *already* triggered it.
+            // A simple check: if currentUser is still null, auth hasn't fired yet.
+            if (state.currentUser === null) {
+                router();
+            }
+        });
+    }
+
+    initializeApp();
+
+    </script>
+</body>
+</html>
+
