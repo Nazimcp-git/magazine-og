@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Root Magazine</title>
+    <title>Root Magazine </title>
     
     <!-- NEW: Google Font (Inter) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,15 +30,63 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <!-- NEW: Firebase Storage SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
     
     <style>
         /* Simple transition for route changes */
         #app {
             transition: opacity 0.3s ease-in-out;
         }
+
+        /* NEW: Preloader Styles */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff; /* White background */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+            visibility: visible;
+            opacity: 1;
+        }
+        .dark #preloader {
+            background-color: #111827; /* Dark background */
+        }
+        #preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        /* Simple logo animation */
+        .loader-logo {
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans antialiased flex flex-col min-h-screen">
+
+    <!-- NEW: Preloader HTML -->
+    <div id="preloader">
+        <svg class="loader-logo w-24 h-24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <title>Root Magazine  Logo</title>
+            <!-- Use 'currentColor' to inherit text color, which we'll set to gold -->
+            <path d="M 50,10 A 40,40 0 0 1 50,90 A 40,40 0 0 1 50,10 Z M 50,18 A 32,32 0 0 0 50,82" fill="#f59e0b" />
+            <path d="M 60,30 L 40,50 L 60,70" stroke="#f59e0b" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+    </div>
 
     <!-- The root element where the entire application will be rendered -->
     <div id="app" class="flex-1"></div>
@@ -67,6 +115,7 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
+    const storage = firebase.storage(); // NEW: Initialize Storage
 
 
     // ===================================================================================
@@ -78,6 +127,7 @@
         articles: [],
         categories: [],
         filteredArticles: [],
+        isInitialLoad: true, // NEW: For preloader
     };
 
     /**
@@ -101,7 +151,6 @@
     const showToast = (message, type = 'success') => {
         const toast = document.createElement('div');
         const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-        // MODIFIED: Replaced shadow-lg with border
         toast.className = `fixed bottom-5 right-5 text-white px-6 py-3 rounded-lg border border-gray-300 dark:border-gray-600 transform translate-y-20 opacity-0 transition-all duration-300 ${bgColor}`;
         toast.textContent = message;
         document.body.appendChild(toast);
@@ -116,6 +165,19 @@
             toast.classList.add('translate-y-20', 'opacity-0');
             setTimeout(() => toast.remove(), 300);
         }, 3000);
+    };
+
+    /**
+     * NEW: Hides the preloader
+     */
+    const hidePreloader = () => {
+        if (state.isInitialLoad) {
+            const preloader = document.getElementById('preloader');
+            if (preloader) {
+                preloader.classList.add('hidden');
+            }
+            state.isInitialLoad = false;
+        }
     };
 
     /**
@@ -221,8 +283,10 @@
              view = 'NotFoundPage'; // Fallback for 404
         }
 
-        // Add a fade-out effect for smooth transitions
-        app.style.opacity = 0;
+        // On subsequent navigations, fade out. On initial load, preloader is already showing.
+        if (!state.isInitialLoad) {
+            app.style.opacity = 0;
+        }
         
         setTimeout(async () => {
             // Call the render function for the matched view
@@ -265,7 +329,11 @@
                     footerContainer.innerHTML = Footer();
             }
             app.style.opacity = 1;
-        }, 300);
+            
+            // NEW: Hide preloader *after* content is rendered
+            hidePreloader();
+
+        }, state.isInitialLoad ? 500 : 300); // Give preloader a moment, else 300ms for fade
     };
 
     // Listen for browser back/forward navigation
@@ -284,7 +352,7 @@
                     <!-- Logo -->
                     <div class="flex-shrink-0 flex items-center">
                         <a href="/" class="text-2xl font-bold text-gray-800 dark:text-white" data-link>
-                            The Root Magazine
+                            Root Magazine 
                         </a>
                     </div>
                     
@@ -293,8 +361,6 @@
                         <a href="/" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Home</a>
                         <a href="/about" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>About</a>
                         <a href="/contact" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Contact</a>
-                        
-                        <!-- MODIFIED: Removed filters, added Search link -->
                         
                         <!-- Desktop Category Dropdown -->
                         <div class="relative">
@@ -361,7 +427,6 @@
                         </div>
                     </div>
                 </div>
-                <!-- Search/Filter in Mobile Menu (REMOVED) -->
             </div>
         </nav>
     `;
@@ -371,7 +436,7 @@
             <div class="w-full max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
                 <!-- About Column -->
                 <div>
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">The Root Magazine</h3>
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Root Magazine </h3>
                     <p class="text-gray-600 dark:text-gray-400">
                         Bringing you the latest in tech, culture, and science with clarity and depth.
                     </p>
@@ -381,10 +446,10 @@
                 <div>
                     <h4 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Quick Links</h4>
                     <ul class="space-y-2">
-                        <li><a href="/" data-link class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">Home</a></li>
-                        <li><a href="/about" data-link class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">About Us</a></li>
-                        <li><a href="/contact" data-link class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">Contact</a></li>
-                        <li><a href="/admin" data-link class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">Admin Login</a></li>
+                        <li><a href="/" data-link class="text-gray-600 dark:text-gray-400 hover:text-amber-500">Home</a></li>
+                        <li><a href="/about" data-link class="text-gray-600 dark:text-gray-400 hover:text-amber-500">About Us</a></li>
+                        <li><a href="/contact" data-link class="text-gray-600 dark:text-gray-400 hover:text-amber-500">Contact</a></li>
+                        <li><a href="/admin" data-link class="text-gray-600 dark:text-gray-400 hover:text-amber-500">Admin Login</a></li>
                     </ul>
                 </div>
                 
@@ -392,10 +457,10 @@
                 <div>
                     <h4 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Topics</h4>
                     <ul class="space-y-2">
-                        <li><a href="#" data-category-filter="Technology" class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">Technology</a></li>
-                        <li><a href="#" data-category-filter="Culture" class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">Culture</a></li>
-                        <li><a href="#" data-category-filter="Politics" class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">Politics</a></li>
-                        <li><a href="#" data-category-filter="Lifestyle" class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">Lifestyle</a></li>
+                        <li><a href="#" data-category-filter="Technology" class="text-gray-600 dark:text-gray-400 hover:text-amber-500">Technology</a></li>
+                        <li><a href="#" data-category-filter="Culture" class="text-gray-600 dark:text-gray-400 hover:text-amber-500">Culture</a></li>
+                        <li><a href="#" data-category-filter="Politics" class="text-gray-600 dark:text-gray-400 hover:text-amber-500">Politics</a></li>
+                        <li><a href="#" data-category-filter="Lifestyle" class="text-gray-600 dark:text-gray-400 hover:text-amber-500">Lifestyle</a></li>
                     </ul>
                 </div>
 
@@ -404,10 +469,10 @@
                     <h4 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Follow Us</h4>
                     <div class="flex space-x-4">
                         <!-- Placeholder SVGs for social icons -->
-                        <a href="#" class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">
+                        <a href="#" class="text-gray-600 dark:text-gray-400 hover:text-amber-500">
                             <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M22.46,6C21.69,6.35 20.86,6.58 20,6.69C20.88,6.16 21.56,5.32 21.88,4.31C21.05,4.81 20.13,5.16 19.16,5.36C18.37,4.5 17.26,4 16,4C13.65,4 11.73,5.92 11.73,8.26C11.73,8.6 11.77,8.92 11.84,9.22C8.28,9.04 5.1,7.38 2.9,4.79C2.5,5.39 2.29,6.16 2.29,7C2.29,8.53 3.07,9.86 4.19,10.64C3.47,10.62 2.8,10.43 2.2,10.13V10.17C2.2,12.38 3.75,14.21 5.8,14.62C5.45,14.7 5.08,14.75 4.7,14.75C4.42,14.75 4.15,14.72 3.89,14.67C4.47,16.5 6.13,17.88 8.1,17.92C6.57,19.08 4.7,19.75 2.69,19.75C2.35,19.75 2.02,19.73 1.7,19.68C3.7,20.98 6.08,21.75 8.64,21.75C16,21.75 20.24,15.65 20.24,10.2C20.24,10.03 20.24,9.86 20.23,9.7C20.93,9.17 21.56,8.51 22.04,7.74C21.32,8.06 20.56,8.28 19.78,8.38C20.58,7.9 21.23,7.07 21.54,6.13C20.83,6.54 20.06,6.85 19.25,7.01C18.51,6.2 17.34,5.69 16,5.69C13.8,5.69 12,7.49 12,9.69C12,10 12.04,10.3 12.12,10.59C8.76,10.41 5.7,8.88 3.57,6.48C3.18,7.12 2.95,7.88 2.95,8.7C2.95,10.12 3.69,11.38 4.72,12.1C4.06,12.08 3.44,11.9 2.89,11.6V11.64C2.89,13.72 4.38,15.45 6.3,15.84C5.97,15.93 5.62,15.98 5.26,15.98C5,15.98 4.73,15.95 4.47,15.9C5.02,17.62 6.57,18.9 8.38,18.94C6.94,20.03 5.17,20.68 3.29,20.68C2.97,20.68 2.64,20.66 2.32,20.61C4.24,21.86 6.5,22.5 8.88,22.5C16.31,22.5 20.5,16.57 20.5,11.2C20.5,11.05 20.5,10.9 20.49,10.75C21.22,10.22 21.88,9.57 22.46,8.82L22.46,6Z" /></svg>
                         </a>
-                        <a href="#" class="text-gray-600 dark:text-gray-400 hover:text-indigo-500">
+                        <a href="#" class="text-gray-600 dark:text-gray-400 hover:text-amber-500">
                             <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.04C6.5 2.04 2 6.53 2 12.06C2 17.06 5.66 21.21 10.44 21.96V14.96H7.9V12.06H10.44V9.8C10.44 7.3 11.93 5.96 14.22 5.96C15.31 5.96 16.45 6.15 16.45 6.15V8.62H15.19C13.95 8.62 13.56 9.39 13.56 10.18V12.06H16.34L15.89 14.96H13.56V21.96C18.34 21.21 22 17.06 22 12.06C22 6.53 17.5 2.04 12 2.04Z" /></svg>
                         </a>
                     </div>
@@ -415,7 +480,7 @@
             </div>
             <!-- Copyright Bar -->
             <div class="w-full max-w-6xl mx-auto px-6 mt-8 pt-8 border-t border-gray-200 dark:border-gray-700 text-center text-gray-500 dark:text-gray-400">
-                &copy; ${new Date().getFullYear()} The Root Magazine. All rights reserved.
+                &copy; ${new Date().getFullYear()} Root Magazine . All rights reserved.
             </div>
         </footer>
     `;
@@ -424,7 +489,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:border-gray-300 dark:hover:border-gray-500">
             <img class="w-full h-48 object-cover" src="${article.imageURL}" alt="${article.title}">
             <div class="p-6">
-                <span class="text-sm text-indigo-500 dark:text-indigo-400 font-semibold">${article.category}</span>
+                <span class="text-sm text-amber-500 dark:text-amber-400 font-semibold">${article.category}</span>
                 <h3 class="mt-2 text-xl font-bold text-gray-900 dark:text-white">${article.title}</h3>
                 <p class="mt-2 text-gray-600 dark:text-gray-400">${article.content.substring(0, 100)}...</p>
                 <div class="mt-4 flex items-center">
@@ -434,7 +499,7 @@
                     </div>
                 </div>
                 <div class="mt-6">
-                    <a href="/article/${article.id}" data-link class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 font-semibold">Read More &rarr;</a>
+                    <a href="/article/${article.id}" data-link class="text-amber-600 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300 font-semibold">Read More &rarr;</a>
                 </div>
             </div>
         </div>
@@ -448,10 +513,10 @@
             <img src="${article.imageURL}" alt="${article.title}" class="w-full h-full object-cover">
             <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
             <div class="absolute bottom-0 left-0 p-12 md:p-16">
-                <span class="text-sm bg-indigo-600 text-white px-3 py-1 rounded font-semibold">${article.category}</span>
+                <span class="text-sm bg-amber-600 text-white px-3 py-1 rounded font-semibold">${article.category}</span>
                 <h2 class="text-3xl md:text-4xl font-bold text-white mt-4 max-w-3xl">${article.title}</h2>
                 <p class="text-gray-200 mt-2">By ${article.author} &bull; ${formatDate(article.timestamp)}</p>
-                <a href="/article/${article.id}" data-link class="mt-4 inline-block text-white font-semibold border-b-2 border-indigo-500 hover:border-white transition">
+                <a href="/article/${article.id}" data-link class="mt-4 inline-block text-white font-semibold border-b-2 border-amber-500 hover:border-white transition">
                     Read More &rarr;
                 </a>
             </div>
@@ -569,7 +634,7 @@
                     <article class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
                         <img class="w-full h-96 object-cover" src="${article.imageURL}" alt="${article.title}">
                         <div class="p-8 md:p-12">
-                            <span class="text-sm text-indigo-500 dark:text-indigo-400 font-semibold">${article.category}</span>
+                            <span class="text-sm text-amber-500 dark:text-amber-400 font-semibold">${article.category}</span>
                             <h1 class="text-4xl md:text-5xl font-extrabold mt-2 text-gray-900 dark:text-white">${article.title}</h1>
                             <div class="mt-4 flex items-center text-gray-500 dark:text-gray-400">
                                 <span>By ${article.author}</span>
@@ -596,12 +661,12 @@
                         <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                             <form id="comment-form">
                                 <div class="mb-4">
-                                    <input type="text" id="comment-name" placeholder="Your Name" required class="w-full px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <input type="text" id="comment-name" placeholder="Your Name" required class="w-full px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500">
                                 </div>
                                 <div class="mb-4">
-                                    <textarea id="comment-message" placeholder="Your Comment" rows="4" required class="w-full px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                                    <textarea id="comment-message" placeholder="Your Comment" rows="4" required class="w-full px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
                                 </div>
-                                <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 transition">Post Comment</button>
+                                <button type="submit" class="bg-amber-600 text-white px-6 py-2 rounded-md hover:bg-amber-700 transition">Post Comment</button>
                             </form>
                             <div id="comments-list" class="mt-8 space-y-6">
                                 ${comments.map(c => `
@@ -636,10 +701,10 @@
             ${Navbar()}
             <main class="w-full max-w-6xl mx-auto px-6 py-12">
                 <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 md:p-12">
-                    <h1 class="text-4xl font-extrabold mt-2 text-gray-900 dark:text-white">About The Root Magazine</h1>
+                    <h1 class="text-4xl font-extrabold mt-2 text-gray-900 dark:text-white">About Root Magazine </h1>
                     <div class="mt-8 prose lg:prose-xl dark:prose-invert max-w-none">
-                        <p>Welcome to The Root Magazine, your number one source for all things tech, culture, and beyond. We're dedicated to giving you the very best of digital content, with a focus on quality, reliability, and uniqueness.</p>
-                        <p>Founded in 2025, The Root Magazine has come a long way from its beginnings. When we first started out, our passion for high-quality journalism drove us to quit our day jobs and turn hard work and inspiration into a booming online magazine. We now serve readers all over the world and are thrilled to be a part of the dynamic wing of the media industry.</p>
+                        <p>Welcome to Root Magazine , your number one source for all things tech, culture, and beyond. We're dedicated to giving you the very best of digital content, with a focus on quality, reliability, and uniqueness.</p>
+                        <p>Founded in 2025, Root Magazine  has come a long way from its beginnings. When we first started out, our passion for high-quality journalism drove us to quit our day jobs and turn hard work and inspiration into a booming online magazine. We now serve readers all over the world and are thrilled to be a part of the dynamic wing of the media industry.</p>
                         <p>We hope you enjoy our articles as much as we enjoy offering them to you. If you have any questions or comments, please don't hesitate to contact us.</p>
                     </div>
                 </div>
@@ -671,7 +736,7 @@
                             <label for="contact-message" class="block text-sm font-medium">Message</label>
                             <textarea id="contact-message" rows="5" required class="mt-1 w-full form-input"></textarea>
                         </div>
-                        <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 transition">Send Message</button>
+                        <button type="submit" class="bg-amber-600 text-white px-6 py-2 rounded-md hover:bg-amber-700 transition">Send Message</button>
                     </form>
                 </div>
             </main>
@@ -686,7 +751,8 @@
                 }
                 .form-input:focus {
                     outline: 2px solid transparent; outline-offset: 2px;
-                    --tw-ring-color: rgb(99 102 241); box-shadow: 0 0 0 2px var(--tw-ring-color);
+                    --tw-ring-color: rgb(245 158 11); /* amber-500 */
+                    box-shadow: 0 0 0 2px var(--tw-ring-color);
                 }
             </style>
         `;
@@ -716,8 +782,8 @@
                 
                 <!-- Filter Bar -->
                 <div class="my-8 p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-center gap-4">
-                    <input type="search" id="search-input" placeholder="Search articles by title or content..." class="w-full md:flex-1 px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <select id="category-filter" class="w-full md:w-auto px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="search" id="search-input" placeholder="Search articles by title or content..." class="w-full md:flex-1 px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <select id="category-filter" class="w-full md:w-auto px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500">
                         <option value="all">All Categories</option>
                         <!-- Populated by JS -->
                     </select>
@@ -751,16 +817,16 @@
                     <form id="login-form">
                         <div class="mb-4">
                             <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                            <input type="email" id="email" required class="mt-1 w-full px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <input type="email" id="email" required class="mt-1 w-full px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500">
                         </div>
                         <div class="mb-6">
                             <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-                            <input type="password" id="password" required class="mt-1 w-full px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <input type="password" id="password" required class="mt-1 w-full px-4 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500">
                         </div>
                         <p id="login-error" class="text-red-500 text-sm mb-4"></p>
-                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 transition">Login</button>
+                        <button type="submit" class="w-full bg-amber-600 text-white py-2 rounded-md hover:bg-amber-700 transition">Login</button>
                     </form>
-                    <p class="text-center mt-4"><a href="/" data-link class="text-indigo-500 hover:underline">← Back to Magazine</a></p>
+                    <p class="text-center mt-4"><a href="/" data-link class="text-amber-500 hover:underline">← Back to Magazine</a></p>
                 </div>
             </div>
         `;
@@ -771,7 +837,7 @@
         await fetchArticlesAndCategories();
 
         const getTabClass = (tabName) => activeTab === tabName 
-            ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' 
+            ? 'border-amber-500 text-amber-600 dark:text-amber-400' 
             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300';
         
         const tabContent = {
@@ -795,12 +861,13 @@
             articles: `
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-2xl font-semibold">Manage Articles</h3>
-                    <button id="add-article-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Add New Article</button>
+                    <button id="add-article-btn" class="bg-amber-600 text-white px-4 py-2 rounded-md hover:bg-amber-700">Add New Article</button>
                 </div>
                 <!-- Article Form (hidden by default) -->
                 <div id="article-form-container" class="hidden bg-white dark:bg-gray-700 p-6 rounded-lg border border-gray-200 dark:border-gray-700 mb-6">
                     <form id="article-form">
                         <input type="hidden" id="article-id">
+                        <input type="hidden" id="imageURL"> <!-- NEW: Hidden field for existing URL -->
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
                                 <label for="title" class="block text-sm font-medium">Title</label>
@@ -816,9 +883,18 @@
                                     ${Object.keys(state.categories).map(c => `<option value="${c}">${c}</option>`).join('')}
                                 </select>
                             </div>
+                            <!-- MODIFIED: Image Upload -->
                             <div>
-                                <label for="imageURL" class="block text-sm font-medium">Image URL</label>
-                                <input type="url" id="imageURL" required class="mt-1 w-full form-input">
+                                <label for="imageFile" class="block text-sm font-medium">Article Image</label>
+                                <input type="file" id="imageFile" class="mt-1 w-full text-sm text-gray-500
+                                  file:mr-4 file:py-2 file:px-4
+                                  file:rounded-full file:border-0
+                                  file:text-sm file:font-semibold
+                                  file:bg-amber-50 dark:file:bg-amber-900/50
+                                  file:text-amber-700 dark:file:text-amber-300
+                                  hover:file:bg-amber-100 dark:hover:file:bg-amber-900
+                                  dark:text-gray-400" accept="image/*">
+                                <img id="current-image-preview" src="" class="hidden w-32 h-32 object-cover mt-2 rounded border border-gray-300 dark:border-gray-600">
                             </div>
                         </div>
                         <div class="mt-6">
@@ -827,7 +903,7 @@
                         </div>
                         <div class="mt-6 flex justify-end space-x-4">
                             <button type="button" id="cancel-edit-btn" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">Cancel</button>
-                            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">Save Article</button>
+                            <button type="submit" id="save-article-btn" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">Save Article</button>
                         </div>
                     </form>
                 </div>
@@ -873,7 +949,7 @@
                            <form id="category-form">
                                 <label for="new-category-name" class="block text-sm font-medium">Category Name</label>
                                 <input type="text" id="new-category-name" required class="mt-1 w-full form-input">
-                                <button type="submit" class="mt-4 w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700">Add Category</button>
+                                <button type="submit" class="mt-4 w-full bg-amber-600 text-white py-2 rounded-md hover:bg-amber-700">Add Category</button>
                            </form>
                         </div>
                      </div>
@@ -906,7 +982,7 @@
                         <a href="#" class="admin-nav-link block px-4 py-2 rounded ${getTabClass('categories')}" data-tab="categories">Categories</a>
                     </nav>
                     <div class="p-4 border-t border-gray-200 dark:border-gray-700">
-                         <a href="/" data-link class="block text-center text-indigo-500 mb-2 hover:underline">← View Site</a>
+                         <a href="/" data-link class="block text-center text-amber-500 mb-2 hover:underline">← View Site</a>
                         <button id="logout-btn" class="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600">Logout</button>
                     </div>
                 </div>
@@ -929,7 +1005,7 @@
                 .form-input:focus {
                     outline: 2px solid transparent;
                     outline-offset: 2px;
-                    --tw-ring-color: rgb(99 102 241);
+                    --tw-ring-color: rgb(245 158 11); /* amber-500 */
                     box-shadow: 0 0 0 2px var(--tw-ring-color);
                 }
             </style>
@@ -941,10 +1017,10 @@
         app.innerHTML = `
             ${Navbar()}
             <main class="w-full max-w-6xl mx-auto px-6 py-20 text-center">
-                <h1 class="text-6xl font-extrabold text-indigo-600">404</h1>
+                <h1 class="text-6xl font-extrabold text-amber-600">404</h1>
                 <p class="mt-4 text-2xl text-gray-700 dark:text-gray-300">Page Not Found</p>
                 <p class="mt-2 text-gray-500">The page you're looking for doesn't exist.</p>
-                <a href="/" data-link class="mt-8 inline-block bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700 transition">Go Home</a>
+                <a href="/" data-link class="mt-8 inline-block bg-amber-600 text-white px-6 py-3 rounded-md hover:bg-amber-700 transition">Go Home</a>
             </main>
         `;
         attachThemeToggleListener();
@@ -994,20 +1070,61 @@
         });
     }
     
-    function handleArticleSubmit(event) {
+    // --- MODIFIED: handleArticleSubmit (now async for file upload) ---
+    async function handleArticleSubmit(event) {
         event.preventDefault();
         const form = event.target;
         const id = form['article-id'].value;
+        const file = form.imageFile.files[0];
+        const existingImageUrl = form.imageURL.value;
+        const saveButton = document.getElementById('save-article-btn');
+
+        // Disable button to prevent double submit
+        if(saveButton) saveButton.disabled = true;
+        if(saveButton) saveButton.textContent = 'Saving...';
+
+        let downloadURL = existingImageUrl; // Default to existing URL
+
+        // Check if a new file is selected
+        if (file) {
+            try {
+                // 1. Create storage reference
+                const storageRef = storage.ref(`articles/${Date.now()}_${file.name}`);
+                
+                // 2. Upload file
+                showToast('Uploading image...', 'success');
+                const uploadTask = await storageRef.put(file);
+                
+                // 3. Get download URL
+                downloadURL = await uploadTask.ref.getDownloadURL();
+                showToast('Image uploaded!', 'success');
+
+            } catch (error) {
+                console.error("Error uploading file:", error);
+                showToast(`Image upload failed: ${error.message}`, 'error');
+                if(saveButton) saveButton.disabled = false;
+                if(saveButton) saveButton.textContent = 'Save Article';
+                return; // Stop execution if upload fails
+            }
+        } else if (!id) {
+            // If it's a NEW post and NO file is selected
+            showToast('Please select an image for the new article.', 'error');
+            if(saveButton) saveButton.disabled = false;
+            if(saveButton) saveButton.textContent = 'Save Article';
+            return;
+        }
         
+        // 4. Prepare data for Realtime Database
         const articleData = {
             title: form.title.value,
             author: form.author.value,
             category: form.category.value,
-            imageURL: form.imageURL.value,
+            imageURL: downloadURL, // Use the new or existing URL
             content: form.content.value,
             timestamp: id ? (state.articles.find(a=>a.id === id).timestamp || Date.now()) : Date.now()
         };
         
+        // 5. Save to Realtime Database
         const dbRef = id ? db.ref(`articles/${id}`) : db.ref('articles').push();
         
         dbRef.set(articleData)
@@ -1017,11 +1134,18 @@
             })
             .catch(error => {
                 showToast(`Error: ${error.message}`, 'error');
+                if(saveButton) saveButton.disabled = false;
+                if(saveButton) saveButton.textContent = 'Save Article';
             });
     }
 
     function handleArticleDelete(id) {
         if (confirm('Are you sure you want to delete this article?')) {
+            
+            // TODO: Delete image from Storage as well (optional but good practice)
+            // This requires getting the imageURL from the article, parsing the ref,
+            // and calling storage.refFromURL(imageURL).delete()
+            
             db.ref(`articles/${id}`).remove()
                 .then(() => {
                     showToast('Article deleted.', 'success');
@@ -1278,6 +1402,7 @@
         });
     }
 
+    // --- MODIFIED: attachAdminDashboardListeners ---
     function attachAdminDashboardListeners() {
         // Navigation between tabs
         document.querySelectorAll('.admin-nav-link').forEach(link => {
@@ -1296,16 +1421,43 @@
         const addBtn = document.getElementById('add-article-btn');
         const cancelBtn = document.getElementById('cancel-edit-btn');
         
+        // NEW: Function to show/hide form
         const showArticleForm = (article = null) => {
+            const preview = document.getElementById('current-image-preview');
+            const fileInput = document.getElementById('imageFile');
+            const hiddenUrlInput = document.getElementById('imageURL');
+
             if (articleForm) {
                 articleForm.reset();
                 articleForm['article-id'].value = article ? article.id : '';
+                
                 if (article) {
+                    // --- EDITING ---
                     articleForm.title.value = article.title;
                     articleForm.author.value = article.author;
                     articleForm.category.value = article.category;
-                    articleForm.imageURL.value = article.imageURL;
                     articleForm.content.value = article.content;
+                    if (hiddenUrlInput) hiddenUrlInput.value = article.imageURL; // Store existing URL
+                    
+                    // Show image preview
+                    if (preview) {
+                        preview.src = article.imageURL;
+                        preview.classList.remove('hidden');
+                    }
+                    // File is not required when editing
+                    if (fileInput) fileInput.required = false;
+
+                } else {
+                    // --- CREATING NEW ---
+                    if (hiddenUrlInput) hiddenUrlInput.value = '';
+                    
+                    // Hide image preview
+                    if (preview) {
+                        preview.src = '';
+                        preview.classList.add('hidden');
+                    }
+                    // File is required for new post
+                    if (fileInput) fileInput.required = true;
                 }
             }
             if(articleFormContainer) articleFormContainer.style.display = 'block';
@@ -1399,7 +1551,9 @@
             // Re-route on auth state change to handle route protection
             // We call router() directly without waiting for DOMContentLoaded
             // because this is an event handler that can fire at any time.
-            router();
+            if (!state.isInitialLoad) {
+                router();
+            }
         });
 
         // Initial route call on page load
