@@ -390,7 +390,7 @@
                         </div>
                         
                         <a href="/search" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Search</a>
-                        <a href="/admin" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Login</a>
+                        
                         
                         <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none">
                             <svg id="theme-icon-light" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -424,9 +424,9 @@
                     <a href="/about" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>About</a>
                     <!-- NEW LINK -->
                     <a href="/editorial-board" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Editorial Board</a>
-                    <a href="/contact" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Contact</a>
+                    
                     <a href="/search" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Search</a>
-                    <a href="/admin" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Admin</a>
+                    
                     
                     <!-- Mobile Category Dropdown -->
                     <div>
@@ -804,19 +804,19 @@
     async function renderEditorialBoardPage() {
         // NEW: Define the editorial board data
         const editorialBoard = [
-            { title: "Chairman", name: "Dr. Elias K. Mathew", link: "" },
-            { title: "Managing Director", name: "Mr. John P. Varkey" },
-            { title: "Joint Managing Director", name: "Ms. Anna K. Thomas" },
-            { title: "Editor in Charge", name: "Mr. David Lee" },
-            { title: "Technical Editor", name: "Ms. Sarah Chen" },
-            { title: "Chief Sub Editor", name: "Mr. Michael Brown" },
-            { title: "Creative Director", name: "Ms. Emily White" },
-            { title: "Executive Director", name: "Mr. James Wilson" },
-            { title: "Assistant Editor", name: "Ms. Priya Sharma" },
-            { title: "Senior Sub Editor", name: "Mr. Tom Davis" },
-            { title: "Art Director", name: "Mr. Kevin Harris" },
-            { title: "Art Managing Editor", name: "Ms. Laura Martin" },
-            { title: "Photo Editor", name: "Mr. Robert Clark" }
+            { title: "Chairman", name: "Dr. Elias K. Mathew", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg" },
+            { title: "Managing Director", name: "Mr. John P. Varkey", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Joint Managing Director", name: "Ms. Anna K. Thomas", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Editor in Charge", name: "Mr. David Lee", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Technical Editor", name: "Ms. Sarah Chen", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Chief Sub Editor", name: "Mr. Michael Brown", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Creative Director", name: "Ms. Emily White", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Executive Director", name: "Mr. James Wilson", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Assistant Editor", name: "Ms. Priya Sharma", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Senior Sub Editor", name: "Mr. Tom Davis", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Art Director", name: "Mr. Kevin Harris", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Art Managing Editor", name: "Ms. Laura Martin", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Photo Editor", name: "Mr. Robert Clark", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  }
         ];
 
         app.innerHTML = `
