@@ -1,45 +1,54 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="[http://www.sitemaps.org/schemas/sitemap/0.9](http://www.sitemaps.org/schemas/sitemap/0.9)">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <!-- Main Static Pages -->
   <url>
-    <loc>[https://therootmagazine.in/index.html#/](https://therootmagazine.in/index.html#/)</loc>
+    <loc>https://therootmagazine/index.html#/</loc>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>[https://therootmagazine.in/index.html#/about](https://therootmagazine.in/index.html#/about)</loc>
+    <loc>https://therootmagazine/index.html#/about</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>[https://therootmagazine.in/index.html#/contact](https://therootmagazine.in/index.html#/contact)</loc>
+    <loc>https://therootmagazine/index.html#/editorial-board</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>[https://therootmagazine.in/index.html#/search](https://therootmagazine.in/index.html#/search)</loc>
+    <loc>https://therootmagazine/index.html#/contact</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>[https://therootmagazine.in/index.html#/editorial-board](https://therootmagazine.in/index.html#/editorial-board)</loc>
+    <loc>https://therootmagazine/index.html#/search</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>[https://therootmagazine.in/index.html#/submissions](https://therootmagazine.in/index.html#/submissions)</loc>
+    <loc>https://therootmagazine/index.html#/submissions</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>[https://therootmagazine.in/index.html#/subscribe](https://therootmagazine.in/index.html#/subscribe)</loc>
+    <loc>https://therootmagazine/index.html#/subscribe</loc>
     <priority>0.8</priority>
   </url>
-
-  <!-- ADD ALL YOUR ARTICLES HERE -->
-  <!-- You will need a script to auto-generate this from your database -->
+  
+  <!-- 
+    DYNAMIC ARTICLES:
+    You will need a script to read your Firebase database 
+    and automatically add a <url> block for every article.
+  -->
+  
+  <!-- Example Article 1 
   <url>
-    <loc>[https://therootmagazine.in/index.html#/article/article-id-1](https://therootmagazine.in/index.html#/article/article-id-1)</loc>
+    <loc>https://therootmagazine/index.html#/article/article-id-1</loc>
     <lastmod>2025-10-28</lastmod>
     <priority>0.9</priority>
   </url>
+  
+  <!-- Example Article 2 -->
   <url>
-    <loc>[https://therootmagazine.in/index.html#/article/article-id-2](https://therootmagazine.in/index.html#/article/article-id-2)</loc>
+    <loc>https://therootmagazine/index.html#/article/article-id-2</loc>
     <lastmod>2025-10-27</lastmod>
     <priority>0.9</priority>
-  </url>
+  </url> -->
 
 </urlset>
