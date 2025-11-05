@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Disallow: /index.html#/admin
+Disallow: /index.html#/admin/dashboard
+
+Sitemap: [https://therootmagazine.in/sitemap.xml](https://therootmagazine.in/sitemap.xml)

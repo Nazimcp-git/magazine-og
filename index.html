@@ -3,8 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Root Magazine </title>
     
+    <!-- NEW: Default SEO Meta Tags -->
+    <title>Root Magazine </title>
+    <meta name="description" content="In every fall we find knowledge, in every rise we find pride. Read the latest in tech, culture, and science.">
+    <link rel="canonical" href="https://therootmagazine.in/">
+    
+    <!-- NEW: Default Open Graph (Social Media) Tags -->
+    <meta property="og:title" content="Root Magazine">
+    <meta property="og:description" content="In every fall we find knowledge, in every rise we find pride. Read the latest in tech, culture, and science.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://therootmagazine.in/">
+    <meta property="og:image" content="https://therootmagazine.in/icon.png">
+
     <!-- NEW: Google Font (Inter) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,7 +98,7 @@
 
     <!-- NEW: Preloader HTML -->
     <div id="preloader">
-        <img src="logo.png" alt="" srcset="" class="loader-logo h-24">
+        <img src="logo.png" alt="Root Magazine Logo" srcset="" class="loader-logo h-24">
     </div>
 
     <!-- The root element where the entire application will be rendered -->
@@ -184,6 +195,66 @@
             state.isInitialLoad = false;
         }
     };
+    
+    // --- NEW: SEO FUNCTIONS ---
+    
+    /**
+     * NEW: Updates the page's metadata for SEO
+     * @param {string} title - The new <title> tag content.
+     * @param {string} description - The new <meta name="description"> content.
+     * @param {string} canonicalPath - The clean, hash-based URL for this page (e.g., #/article/123).
+     */
+    function updateMetadata(title, description, canonicalPath) {
+        // --- !!! REPLACE WITH YOUR DOMAIN !!! ---
+        const domain = "https://therootmagazine.in"; 
+        // ---
+        
+        const fullTitle = `${title} | Root Magazine`;
+        const fullCanonicalUrl = `${domain}/index.html${canonicalPath}`; 
+
+        // 1. Update Page Title
+        document.title = fullTitle;
+
+        // 2. Update Meta Description
+        let metaDesc = document.querySelector('meta[name="description"]');
+        if (!metaDesc) {
+            metaDesc = document.createElement('meta');
+            metaDesc.setAttribute('name', 'description');
+            document.head.appendChild(metaDesc);
+        }
+        metaDesc.setAttribute('content', description);
+
+        // 3. Update Canonical URL
+        let canonicalLink = document.querySelector('link[rel="canonical"]');
+        if (!canonicalLink) {
+            canonicalLink = document.createElement('link');
+            canonicalLink.setAttribute('rel', 'canonical');
+            document.head.appendChild(canonicalLink);
+        }
+        canonicalLink.setAttribute('href', fullCanonicalUrl);
+
+        // 4. Update Open Graph (Social Media) Tags
+        updateMetaProperty('og:title', fullTitle);
+        updateMetaProperty('og:description', description);
+        updateMetaProperty('og:url', fullCanonicalUrl);
+    }
+
+    /**
+     * Helper for updating meta properties like Open Graph (og:) tags.
+     * @param {string} property - The 'property' attribute (e.g., 'og:title').
+     * @param {string} content - The 'content' attribute.
+     */
+    function updateMetaProperty(property, content) {
+        let metaTag = document.querySelector(`meta[property="${property}"]`);
+        if (!metaTag) {
+            metaTag = document.createElement('meta');
+            metaTag.setAttribute('property', property);
+            document.head.appendChild(metaTag);
+        }
+        metaTag.setAttribute('content', content);
+    }
+    
+    // --- END SEO FUNCTIONS ---
 
     /**
      * NEW: Helper to populate category dropdown
@@ -376,7 +447,7 @@
                 <div class="flex justify-between items-center h-16">
                     <!-- Logo -->
                     <div class="flex-shrink-0 flex items-center">
-                        <img src="logo.png" style="height: 40px; width: auto;">
+                        <img src="logo.png" alt="Root Magazine Logo" style="height: 40px; width: auto;">
                     </div>
                     
                     <!-- Desktop Navigation Links (MODIFIED: hrefs changed to #/...) -->
@@ -402,7 +473,7 @@
                         
                         <a href="#/search" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Search</a>
                         <a href="#/subscribe" class="px-2 py-1 text-red-600 dark:text-red-400 font-bold rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Subscribe</a>
-                        
+                        <a href="#/admin" class="px-2 py-1 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Login</a>
                         
                         <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none">
                             <svg id="theme-icon-light" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -438,7 +509,7 @@
                     <a href="#/contact" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Contact</a>
                     <a href="#/search" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Search</a>
                     <a href="#/subscribe" class="block px-3 py-2 rounded-md text-base font-bold text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Subscribe</a>
-                    
+                    <a href="#/admin" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" data-link>Admin</a>
                     
                     <!-- Mobile Category Dropdown -->
                     <div>
@@ -519,6 +590,7 @@
 
     const ArticleCard = (article) => `
         <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:border-gray-300 dark:hover:border-gray-500">
+            <!-- SEO: Added alt tag -->
             <img class="w-full h-48 object-cover" src="${article.imageURL}" alt="${article.title}">
             <div class="p-6">
                 <span class="text-sm text-red-500 dark:text-red-400 font-semibold">${article.category}</span>
@@ -542,6 +614,7 @@
      */
     const SlideshowCard = (article) => `
         <div class="w-full h-[85vh] relative flex-shrink-0">
+            <!-- SEO: Added alt tag -->
             <img src="${article.imageURL}" alt="${article.title}" class="w-full h-full object-cover">
             <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
             <div class="absolute bottom-0 left-0 p-12 md:p-16">
@@ -585,7 +658,8 @@
     // NEW: Component for Editorial Board Member
     const EditorialMemberCard = (member) => `
         <div class="text-center">
-            <img src="${member.link}" alt="${member.name}" class="w-24 h-24 rounded-full mx-auto mb-4 border-2 border-gray-300 dark:border-gray-600 object-cover"
+            <!-- SEO: Added alt tag -->
+            <img src="${member.link}" alt="${member.name} - ${member.title}" class="w-24 h-24 rounded-full mx-auto mb-4 border-2 border-gray-300 dark:border-gray-600 object-cover"
                  onerror="this.src='https://placehold.co/100x100/EFEFEF/AAAAAA?text=Photo&shape=round'">
             <h3 class="font-bold text-lg text-gray-900 dark:text-white">${member.name}</h3>
             <p class="text-red-500 dark:text-red-400">${member.title}</p>
@@ -648,6 +722,15 @@
         attachThemeToggleListener(); // Attach theme toggle
         attachNavbarListeners(); // Attach listeners for dropdown
         populateCategoriesInNav(); // Populate dropdown
+        
+        // NEW: Update Metadata
+        updateMetadata(
+            'Root Magazine - The Root Grows On', 
+            'In every fall we find knowledge, in every rise we find pride. Read the latest in tech, culture, and science.', 
+            '#/'
+        );
+        // Reset social image to default
+        updateMetaProperty('og:image', 'https://therootmagazine.in/icon.png'); // Update this path
     }
 
     async function renderArticlePage(articleId) {
@@ -658,6 +741,15 @@
                 renderNotFoundPage();
                 return;
             }
+            
+            // NEW: Update metadata
+            updateMetadata(
+                article.title,
+                article.content.substring(0, 155), // Get first 155 chars for description
+                `#/article/${articleId}`
+            );
+            // Also update social media image tag
+            updateMetaProperty('og:image', article.imageURL);
 
             const commentsSnapshot = await db.ref(`comments/${articleId}`).once('value');
             const commentsData = commentsSnapshot.val() || {};
@@ -757,6 +849,14 @@
         attachThemeToggleListener();
         attachNavbarListeners();
         populateCategoriesInNav();
+        
+        // NEW: Update Metadata
+        updateMetadata(
+            'About Us', 
+            'Learn about the mission and history of Root Magazine, founded in 2025 to bring you the best in digital content.', 
+            '#/about'
+        );
+        updateMetaProperty('og:image', 'https://therootmagazine.in/icon.png'); // Update this path
     }
 
     async function renderContactPage() {
@@ -810,6 +910,14 @@
             showToast('Message sent! (Demo)', 'success');
             e.target.reset();
         });
+        
+        // NEW: Update Metadata
+        updateMetadata(
+            'Contact Us', 
+            'Get in touch with the Root Magazine team. Send us your tips, questions, or feedback.', 
+            '#/contact'
+        );
+        updateMetaProperty('og:image', 'https://therootmagazine.in/icon.png'); // Update this path
     }
 
     // --- NEW: RENDER FUNCTIONS FOR EDITORIAL & SUBMISSIONS ---
@@ -848,6 +956,14 @@
         attachThemeToggleListener();
         attachNavbarListeners();
         populateCategoriesInNav();
+        
+        // NEW: Update Metadata
+        updateMetadata(
+            'Editorial Board', 
+            'Meet the team behind Root Magazine, from our Chairman to our editors and creative directors.', 
+            '#/editorial-board'
+        );
+        updateMetaProperty('og:image', 'https://therootmagazine.in/icon.png'); // Update this path
     }
 
     async function renderSubmissionsPage() {
@@ -895,6 +1011,14 @@
         attachThemeToggleListener();
         attachNavbarListeners();
         populateCategoriesInNav();
+        
+        // NEW: Update Metadata
+        updateMetadata(
+            'Write for Us - Submission Guidelines', 
+            'Interested in writing for Root Magazine? Find our submission guidelines for each category, including word counts and topics.', 
+            '#/submissions'
+        );
+        updateMetaProperty('og:image', 'https://therootmagazine.in/icon.png'); // Update this path
     }
     
     // --- NEW: RENDER SUBSCRIBE PAGE ---
@@ -958,6 +1082,14 @@
         attachThemeToggleListener();
         attachNavbarListeners();
         populateCategoriesInNav();
+        
+        // NEW: Update Metadata
+        updateMetadata(
+            'Subscribe', 
+            'Subscribe to Root Magazine for full digital access or our print + digital bundle. Contact us via WhatsApp to start.', 
+            '#/subscribe'
+        );
+        updateMetaProperty('og:image', 'https://therootmagazine.in/icon.png'); // Update this path
     }
     // --- END NEW RENDER FUNCTION ---
 
@@ -994,6 +1126,14 @@
         attachNavbarListeners();
         populateCategoriesInNav();
         populateSearchPageFilters(); // NEW filter populator
+        
+        // NEW: Update Metadata
+        updateMetadata(
+            'Search Articles', 
+            'Search our archives for articles on tech, culture, and more. Filter by category or keyword.', 
+            '#/search'
+        );
+        updateMetaProperty('og:image', 'https://therootmagazine.in/icon.png'); // Update this path
     }
     // --- END NEW RENDER FUNCTIONS ---
 
@@ -1219,6 +1359,14 @@
         attachThemeToggleListener();
         attachNavbarListeners();
         populateCategoriesInNav(); // NEW: Populate categories here too
+        
+        // NEW: Update Metadata
+        updateMetadata(
+            '404 - Page Not Found', 
+            'The page you are looking for does not exist or has been moved.', 
+            window.location.hash.substring(1) // Use the path that failed
+        );
+        updateMetaProperty('og:image', 'https://therootmagazine.in/icon.png'); // Update this path
     }
 
     // ===================================================================================
@@ -1757,6 +1905,10 @@
             // Only call router if auth hasn't *already* triggered it.
             // A simple check: if currentUser is still null, auth hasn't fired yet.
             if (state.currentUser === null) {
+                // MODIFIED: Check if hash exists, otherwise set to /
+                if (window.location.hash === '') {
+                    window.location.hash = '#/';
+                }
                 router();
             }
         });
@@ -1767,4 +1919,3 @@
     </script>
 </body>
 </html>
-
