@@ -3,31 +3,31 @@
   
   <!-- Main Static Pages -->
   <url>
-    <loc>https://therootmagazine/index.html#/</loc>
+    <loc>https://therootmagazine.in/index.html#/</loc>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://therootmagazine/index.html#/about</loc>
+    <loc>https://therootmagazine.in/index.html#/about</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://therootmagazine/index.html#/editorial-board</loc>
+    <loc>https://therootmagazine.in/index.html#/editorial-board</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://therootmagazine/index.html#/contact</loc>
+    <loc>https://therootmagazine.in/index.html#/contact</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://therootmagazine/index.html#/search</loc>
+    <loc>https://therootmagazine.in/index.html#/search</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://therootmagazine/index.html#/submissions</loc>
+    <loc>https://therootmagazine.in/index.html#/submissions</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://therootmagazine/index.html#/subscribe</loc>
+    <loc>https://therootmagazine.in/index.html#/subscribe</loc>
     <priority>0.8</priority>
   </url>
   
