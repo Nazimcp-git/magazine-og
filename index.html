@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- NEW: Default SEO Meta Tags -->
-    <title>Root Magazine </title>
-    <meta name="description" content="In every fall we find knowledge, in every rise we find pride. Read the latest in tech, culture, and science.">
-    <link rel="canonical" href="https://therootmagazine.in/">
+    <title>Root Magazine - Tech, Culture & Science</title>
+<meta name="description" content="Root Magazine: In every fall we find knowledge, in every rise we find pride. Read the latest in tech, culture, and science.">
+<link rel="canonical" href="https://therootmagazine.in/">
     
     <!-- NEW: Default Open Graph (Social Media) Tags -->
     <meta property="og:title" content="Root Magazine">
@@ -106,6 +106,23 @@
     
     <!-- Footer container, will be populated by the router -->
     <div id="footer-container"></div>
+    <!-- FIX: Fallback links for SEO crawlers -->
+<noscript>
+    <div class="p-8">
+        <h1>Root Magazine - Tech, Culture & Science</h1>
+        <p>Please enable JavaScript to view this website.</p>
+        <nav>
+            <ul>
+                <li><a href="#/">Home</a></li>
+                <li><a href="#/about">About Us</a></li>
+                <li><a href="#/editorial-board">Editorial Board</a></li>
+                <li><a href="#/contact">Contact</a></li>
+                <li><a href="#/subscribe">Subscribe</a></li>
+                <li><a href="#/search">Search Articles</a></li>
+            </ul>
+        </nav>
+    </div>
+</noscript>
 
     <!-- The entire application logic is contained within this script tag -->
     <script>
@@ -688,6 +705,7 @@
             ${Navbar()}
             <main>
                 <!-- 1. Trending Posts Slideshow - NOW FULL WIDTH -->
+                <h1 class="sr-only">Root Magazine: Insightful Stories on Tech & Culture</h1>
                 ${trendingArticles.length > 0 ? `
                 <section class="pb-12 bg-gray-100 dark:bg-gray-900">
                     ${TrendingSlideshow(trendingArticles)}
