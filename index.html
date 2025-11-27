@@ -600,8 +600,8 @@
             </div>
             <!-- Copyright Bar -->
             <div class="w-full max-w-6xl mx-auto px-6 mt-8 pt-8 border-t border-gray-200 dark:border-gray-700 text-center text-gray-500 dark:text-gray-400">
-                &copy; ${new Date().getFullYear()} Root Magazine . All rights reserved. <br> Website Developed By<a href="https://instagram.com/naziieee.__">Nazim Cp</a>
-            </div>
+            &copy; ${new Date().getFullYear()} Root Magazine . All rights reserved. <br> Website Developed By <a href="https://instagram.com/naziieee.__" target="_blank" rel="noopener noreferrer" class="text-red-500 hover:text-red-600 dark:hover:text-red-400 font-semibold underline">Nazim Cp</a>
+        </div>
         </footer>
     `;
 
@@ -942,19 +942,25 @@
     async function renderEditorialBoardPage() {
         // NEW: Define the editorial board data
         const editorialBoard = [
-            { title: "Chairman", name: "Dr. Elias K. Mathew", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg" },
-            { title: "Managing Director", name: "Mr. John P. Varkey", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Joint Managing Director", name: "Ms. Anna K. Thomas", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Editor in Charge", name: "Mr. David Lee", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Technical Editor", name: "Ms. Sarah Chen", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Chief Sub Editor", name: "Mr. Michael Brown", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Creative Director", name: "Ms. Emily White", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Executive Director", name: "Mr. James Wilson", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Assistant Editor", name: "Ms. Priya Sharma", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Senior Sub Editor", name: "Mr. Tom Davis", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Art Director", name: "Mr. Kevin Harris", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Art Managing Editor", name: "Ms. Laura Martin", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Photo Editor", name: "Mr. Robert Clark", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  }
+            { title: "Chairman & Chief Editor", name: "Ahmed Rajihali Shihab Thangal", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg" },
+            { title: "Joint Managing Editor", name: "Nizam Hudawi Koppam", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Executive Editor", name: "Shameem Hudawi Palakaparamba", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Editor", name: "Saheer Muhammed Vilayur", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Sub Editor", name: "Aadil Shah Aluva", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Sub Editor", name: "Hashim Rasheed Koppam", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Sub Editor", name: "Mishal Muthuthala", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Design", name: "Mahmood Kooriyad", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Design", name: "Amjid Venjaramood", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Design", name: "Faisal Pattambi", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Design", name: "Arshad Koppam", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Design", name: "Shinas Wandoor", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Art Director", name: "Swalih Mirshad Pallippuram", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Art Director", name: "Musthafa Chalavara", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Visualiser", name: "Hismathullah Manjambra", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Web Managing", name: "Shahim Kondotty", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Web Managing", name: "Irshad Kolathur", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
+            { title: "Social Media Manager", name: "Shadil Aripra", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  }
+            
         ];
 
         app.innerHTML = `
