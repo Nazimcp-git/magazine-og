@@ -942,24 +942,25 @@
     async function renderEditorialBoardPage() {
         // NEW: Define the editorial board data
         const editorialBoard = [
-            { title: "Chairman & Chief Editor", name: "Ahmed Rajihali Shihab Thangal", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg" },
-            { title: "Joint Managing Editor", name: "Nizam Hudawi Koppam", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Executive Editor", name: "Shameem Hudawi Palakaparamba", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Editor", name: "Saheer Muhammed Vilayur", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Sub Editor", name: "Aadil Shah Aluva", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Sub Editor", name: "Hashim Rasheed Koppam", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Sub Editor", name: "Mishal Muthuthala", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Design", name: "Mahmood Kooriyad", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Design", name: "Amjid Venjaramood", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Design", name: "Faisal Pattambi", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Design", name: "Arshad Koppam", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Design", name: "Shinas Wandoor", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Art Director", name: "Swalih Mirshad Pallippuram", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Art Director", name: "Musthafa Chalavara", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Visualiser", name: "Hismathullah Manjambra", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Web Managing", name: "Shahim Kondotty", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Web Managing", name: "Irshad Kolathur", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  },
-            { title: "Social Media Manager", name: "Shadil Aripra", link: "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"  }
+            { title: "Chairman & Chief Editor", name: "Ahmed Rajihali Shihab Thangal", link: "editorial/rajihalithangal.jpg" },
+            { title: "Joint Managing Editor", name: "Nizam Hudawi Koppam", link: "editorial/nizamhudawikoppam.jpg"  },
+            { title: "Executive Editor", name: "Shameem Hudawi Palakaparamba", link: "editorial/shameemhudawi.jpg"  },
+            { title: "Chief News Editor", name: "Fayis PS Chentrappinni", link: "editorial/fayishudawi.jpg"  },
+            { title: "Editor", name: "Saheer Muhammed Vilayur", link: "editorial/saheervilayur.jpg"  },
+            { title: "Sub Editor", name: "Aadil Shah Aluva", link: "editorial/adilsha.jpg"  },
+            { title: "Sub Editor", name: "Hashim Rasheed Koppam", link: "editorial/hashim.jpg"  },
+            { title: "Sub Editor", name: "Mishal Muthuthala", link: "editorial/mishal.jpg"  },
+            { title: "Design", name: "Mahmood Kooriyad", link: "editorial/mahmood.jpg"  },
+            { title: "Design", name: "Amjid Venjaramood", link: "editorial/amjid.jpg"  },
+            { title: "Design", name: "Faisal Pattambi", link: "editorial/faisal.jpg"  },
+            { title: "Design", name: "Arshad Koppam", link: "editorial/arshad.jpg"  },
+            { title: "Design", name: "Shinas Wandoor", link: "editorial/shinas.jpg"  },
+            { title: "Art Director", name: "Swalih Mirshad Pallippuram", link: "editorial/swalih.jpg"  },
+            { title: "Art Director", name: "Musthafa Chalavara", link: "editorial/musthafa.jpg"  },
+            { title: "Visualiser", name: "Hismathullah Manjambra", link: "editorial/ismath.jpg"  },
+            { title: "Web Managing", name: "Shahim Kondotty", link: "editorial/shahim.jpg"  },
+            { title: "Web Managing", name: "Irshad Kolathur", link: "editorial/irshad.jpg"  },
+            { title: "Social Media Manager", name: "Shadil Aripra", link: "editorial/shadil.jpg"  }
             
         ];
 
@@ -999,10 +1000,16 @@
 
         // Define submission details (you can customize this)
         const submissionDetails = {
-            "Divine Insight": "We welcome articles of 800-1200 words exploring themes of spirituality, philosophy, and personal growth. Please include relevant citations if applicable.",
-            "Roote De The Root": "Submissions should be 1000-1500 words. We are looking for in-depth analysis of cultural trends, historical retrospectives, and artistic critiques.",
-            "Miles & Memories": "Travelogues, photo essays, and personal stories from the road. Articles should be 600-1000 words, accompanied by high-resolution photos.",
-            "On The Ground": "Reporting on local events, community heroes, and untold stories. Submissions should be factual, well-researched, and 500-800 words.",
+            "Divine Insight": "Our spiritual sanctuary dedicated to Qur’anic reflections and Islamic scholarship.It explores meanings, moral lessons, and the deeper wisdom of the Qur’an for modern life.<br><b>What we accept:</b><br>•	Qur’anic themes<br>•	Tafsir-based analysis<br>•	Reflections on verses<br>•	Spiritual essays rooted in Islamic tradition<br><b>Word Count: 800–3000 words</b><br><br><b>Notes:</b><br>•	Proper citations required<br>•	Academic or devotional tone welcomed<br>•	Non-published<br>",
+            "Roote De The Root": "Roote De The Root is the intellectual heart of our magazine - where thought meets depth, and depth meets courage.This section is dedicated to long-form essays that dig beneath the surface of culture, history, identity, art, media, and society.<br>        <b>It is where we explore:</b><br>•	The roots of cultural shifts <br>•	The essence of artistic movements <br>•	Historical pathways that shape the present <br>•	Social narratives that define communities <br>•	Intellectual investigations into who we are and why we think the way we do <br><br>A <b>Roote De The Root</b> article is not just a write-up- it is an excavation.Writers are encouraged to engage in deeper questioning, rigorous research, and layered storytelling.  <b>Your piece should carry:</b> <br>•	Analytical strength <br>•	Emotional resonance <br>•	Strong narrative flow <br>•	Historical context <br>•	Cultural sensitivity <br>•	Scholarly discipline <br>•	Citations <br>  <br>  <b>This category seeks writers who dare to look headlines, trends, beyond noise -into the structural, spiritual, and aesthetic foundations of our world.</b><br><b>What we accept:</b> <br>•	Cultural criticism <br>•	Contemporaries <br>•	Historical analyses <br>•	Intellectual essays <br>•	Investigations into identity, art, storytelling, or community <br>•	Research-based long narratives <br> <br><b>Word Count: 1000–3000 words</b><br><br><b>Notes:</b><br>•	Must be well-researched <br>•	Deep, structured, reflective, and original <br>•	Absolutely no AI-generated content <br>",
+            "Miles & Memories": "Stories from the road, the soul, and the places in between.<br>        <b>What we accept:</b><br>•	Travelogues <br>•	Diaries <br>•	Cultural reflections <br>•	Photo essays <br> <br><b>Word Count: 600–2500 words <br>Photos: 3–6 HQ images</b><br>",
+            "Bizline": "A dynamic space for business stories, entrepreneurial journeys, and brand showcases. Promotional write-ups are also welcome, as long as they maintain authenticity and narrative quality. <br> <b>What we accept:</b><ul><li>•	Entrepreneur success stories</li><li>•	MSME journeys</li><li>•	MSME journeys</li><li>•	Market insights</li><li>•	Brand features, product highlights, service introductions</li><li>•	Diaspora business stories</li></ul><b>Word Count: 500–2000 words</b> <br><br> <b> Notes:</b><br>•	Promotional content allowed<br>•	Interviews <br> •	Must be narrative, not purely advertising <br> •	Original and AI-free.",
+            "Focus": "Our media-review or perception section.Reviews must be thoughtful, structured, and balanced, analysing contemporary cinema, series, anime, and media non-violating Islamic values.<br><b>What we accept:</b><br>•	Anime reviews <br>•	Movie critiques, BTS and discussions<br>•	Media critique<br>•	Digital culture commentary<br>Word Count: 500–1000 words<br>",
+            "Taste Tales": "Food as memory, emotion, culture, and connection.<br>        <b>It is where we explore:</b><br>•	Food stories <br>•	Cultural food essays <br>•	Restaurant reflections <br>•	Travel-food diaries <br>•	Promotional content allowed <br><br><b>Word Count: 500–1000 words</b><br>",
+            "The Written": "Short-form, sharp, powerful writing. Perspectives on contemporaries and any other short essays.<br>        <b>What we accept:</b><br>•	Short essays <br>•	Opinion pieces <br>•	Creative reflections <br>•	Social and cultural commentary  <br> <br><b>Word Count: 500–1000 words</b><br><b>Notes:</b><br>•	Deep, structured, reflective, and original <br>•	Absolutely no AI-generated content <br>",
+            "To Blink": "Where philosophy meets motivation.Mini-stories, life reflections, and thought-provoking narratives.<br>        <b>•	Philosophical storytelling <br>•	Motivational narratives <br>•	Insightful reflections <br>•	Emotional micro-essays <br>  <br><b>Word Count: 500–1000 words</b><br><b>Tone: Reflective, inspiring, meaningful</b><br>",
+            "Strokes": "This category accepts strokes - drawings, sketches, illustrations, digital art.<br>        <b>What we accept:</b><br>•	Original strokes <br>•	Contemporary, cultural, or thematic artwork <br>•	Art with emotional or conceptual depth <br>  <b>Requirements:</b> <br><b>•	High-resolution PNG/JPG/PDF  <br>•	Title + short caption <br>•	Must be original and unpublished  <br>",
+            "The Arena": "The Root’s sports desk, capturing the energy of games, athletes, and sporting culture.<br>        <b>What we accept:</b><br>•	Match reports <br>•	Sports news<br>•	Athlete profiles<br>•	Opinion and commentary<br>•	Discussions <br><b>Word Count: 500–1000 words</b><br>",
             "default": "We accept general submissions from 500-1000 words. Please ensure your work is original and has not been published elsewhere."
         };
 
@@ -1011,7 +1018,12 @@
             <main class="w-full max-w-6xl mx-auto px-6 py-12">
                 <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 md:p-12">
                     <h1 class="text-4xl font-extrabold mt-2 text-gray-900 dark:text-white">Write for Us</h1>
-                    <p class="mt-4 text-lg text-gray-600 dark:text-gray-300">We are always looking for new voices and fresh perspectives. Please review our submission guidelines for each category below.</p>
+                    <p class="mt-4 text-lg text-gray-600 dark:text-gray-300">At <b>The Root Magazine</b>, we believe powerful voices deserve powerful platforms.
+We invite you to write to us, to share your experiences, insights, creativity, and perspectives across our categories.
+All submissions should be original, human-written, and completely <b>free from AI-generated content.</b>
+Every accepted piece will be published on therootmagazine.in, and the best of these works will be selected for publication in our print magazine as well.
+Your words may begin on the web, but they can find a permanent home in print.
+</p>
                     
                     <div class="mt-8 prose lg:prose-xl dark:prose-invert max-w-none space-y-6">
                         
